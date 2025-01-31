@@ -69,5 +69,5 @@ More details, including system architecture, diagrams, and technical documentati
 |-------------------|------------------------------|---------------------------|
 | [Name 1]          | Frontend Developer           | [GitHub]()                |
 | [Name 2]          | Backend Developer            | [GitHub]()                |
-| [Name 3]          | Backend (Logging Specialist) | [GitHub]()                |
-| [Name 4]          | Backend Support / Fullstack  | [GitHub]()                |
+| [Name 3]          | Backend (Logging)            | [GitHub]()                |
+| [Name 4]          | Backend Support              | [GitHub]()                |
