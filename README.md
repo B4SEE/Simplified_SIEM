@@ -48,12 +48,12 @@ This project is designed to track user authentication events, store logs, analyz
 ### **Project Structure**  
 ```plaintext
 📂 project-root
- ├── 📂 dir1           # Example
- ├── 📂 dir2           # Example
- ├── 📂 dir3           # Example
- ├── 📂 docs           # Example
- ├── 📜 README.md      # Project overview
- ├── 📜 .gitignore     # Git ignore file
+ ├── 📁 dir1           # Example
+ ├── 📁 dir2           # Example
+ ├── 📁 dir3           # Example
+ ├── 📁 docs           # Example
+ ├── 📄 README.md      # Project overview
+ ├── 📄 .gitignore     # Git ignore file
 ```
 [To be completed]  
 
