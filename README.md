@@ -67,7 +67,7 @@ More details, including system architecture, diagrams, and technical documentati
 ## **Team Members & Contact**  
 | Name              | Role                         | Contact Info              |
 |-------------------|------------------------------|---------------------------|
-| [Name 1]          | Frontend Developer           | [GitHub]()                |
-| [Name 2]          | Backend Developer            | [GitHub]()                |
-| [Name 3]          | Backend (Logging)            | [GitHub]()                |
-| [Name 4]          | Backend Support              | [GitHub]()                |
+| vhs-cake          | Frontend Developer           | [GitHub](https://github.com/vhs-cake)                |
+| M2kura            | Backend Developer            | [GitHub](https://github.com/M2kura)                |
+| ponny12           | Backend Support              | [GitHub](https://github.com/ponny12)                |
+| B4SEE             | Backend (Logging)            | [GitHub](https://github.com/B4SEE)                |
