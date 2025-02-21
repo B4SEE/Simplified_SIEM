@@ -65,9 +65,12 @@ More details, including system architecture, diagrams, and technical documentati
 ---
 
 ## **Team Members & Contact**  
-| Name              | Role                         | Contact Info              |
-|-------------------|------------------------------|---------------------------|
-| vhs-cake          | Frontend Developer           | [GitHub](https://github.com/vhs-cake)                |
-| M2kura            | Backend Developer            | [GitHub](https://github.com/M2kura)                |
-| ponny12           | Backend Support              | [GitHub](https://github.com/ponny12)                |
-| B4SEE             | Backend (Logging)            | [GitHub](https://github.com/B4SEE)                |
+| Name              | Role                           | Contact Info                          |
+|-------------------|--------------------------------|---------------------------------------|
+| B4SEE             | Algorithms Backend & Team Lead | [GitHub](https://github.com/B4SEE)    |
+| ponny12           | Backend Developer 1            | [GitHub](https://github.com/ponny12)  |
+| M2kura            | Backend Developer 2            | [GitHub](https://github.com/M2kura)   |
+| -                 | Frontend Developer 1           | [GitHub](https://github.com/)         |
+| vhs-cake          | Frontend Developer 2           | [GitHub](https://github.com/vhs-cake) |
+
+
