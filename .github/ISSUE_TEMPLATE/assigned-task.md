@@ -1,6 +1,6 @@
 ---
-name: Task
-about: Create task issue
+name: Assigned task
+about: Assign task
 title: ''
 labels: task
 assignees: ''
