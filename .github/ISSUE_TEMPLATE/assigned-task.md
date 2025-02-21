@@ -7,8 +7,10 @@ assignees: ''
 
 ---
 
-### Description
+**Description:**
 <!-- Describe the task. -->
 
-### Additional Context
+**Additional Context:**
 <!-- Any additional context or ideas that are related to this task. -->
+
+**Assignees:**
