@@ -70,7 +70,7 @@ More details, including system architecture, diagrams, and technical documentati
 | B4SEE             | Algorithms Backend & Team Lead | [GitHub](https://github.com/B4SEE)    |
 | ponny12           | Backend Developer 1            | [GitHub](https://github.com/ponny12)  |
 | M2kura            | Backend Developer 2            | [GitHub](https://github.com/M2kura)   |
-| -                 | Frontend Developer 1           | [GitHub](https://github.com/)         |
+| mamaegeo          | Frontend Developer 1           | [GitHub](https://github.com/mamaegeo) |
 | vhs-cake          | Frontend Developer 2           | [GitHub](https://github.com/vhs-cake) |
 
 
