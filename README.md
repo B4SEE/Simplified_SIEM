@@ -3,13 +3,16 @@
 A logging and monitoring system that tracks authentication events, detects suspicious patterns, and provides real-time visualization. The project simulates basic security monitoring for authentication activity.  
 
 ## **Table of Contents**  
-1. [Overview](#overview)  
-2. [Features](#features) 
-3. [Installation & Setup](#installation--setup)  
-4. [Usage](#usage)  
-5. [Development Guide](#development-guide)  
-6. [Additional Documentation](#additional-documentation)
-7. [Team Members & Contact](#team-members--contact)
+- [**Enterprise Logging and Monitoring System (Simplified SIEM)**](#enterprise-logging-and-monitoring-system-simplified-siem)
+  - [**Table of Contents**](#table-of-contents)
+  - [**Overview**](#overview)
+  - [**Features**](#features)
+  - [**Installation \& Setup**](#installation--setup)
+  - [**Usage**](#usage)
+  - [**Development Guide**](#development-guide)
+    - [**Project Structure**](#project-structure)
+  - [**Additional Documentation**](#additional-documentation)
+  - [**Team Members \& Contact**](#team-members--contact)
 
 ---
 
@@ -47,13 +50,48 @@ This project is designed to track user authentication events, store logs, analyz
 ## **Development Guide**  
 ### **Project Structure**  
 ```plaintext
-📂 project-root
- ├── 📁 dir1           # Example
- ├── 📁 dir2           # Example
- ├── 📁 dir3           # Example
- ├── 📁 docs           # Example
- ├── 📄 README.md      # Project overview
- ├── 📄 .gitignore     # Git ignore file
+📂 Simplified_SIEM/
+├── 📂 authentication_service/
+│   ├── 📂 app/
+│   │   ├── __init__.py        # Flask app initialization
+│   │   ├── 📂 models/
+│   │   │   └── user.py        # User model (SQLAlchemy)
+│   │   ├── 📂 blueprints/
+│   │   │   └── auth.py        # Authentication routes (login, register, etc.)
+│   │   ├── 📂 tasks/
+│   │   │   └── email_tasks.py # Celery tasks (e.g., sending emails)
+│   │   ├── celery.py          # Celery configuration
+│   │   └── config.py          # Configuration settings
+│   ├── run.py                 # Entry point to run the Flask app
+│   ├── 📂 alembic/               # Database migrations with Alembic
+│   │   ├── env.py
+│   │   ├── script.py.mako
+│   │   └── versions/          # Migration scripts
+│   ├── requirements.txt       # Python dependencies
+│   ├── Dockerfile             # Docker configuration for this service
+│   └── 📂 tests/
+│       └── test_auth.py       # Unit/integration tests
+├── 📂 logging_service/
+│   ├── 📂 app/
+│   │   ├── __init__.py        # Flask app initialization
+│   │   ├── 📂 blueprints/
+│   │   │   ├── api.py         # REST API endpoints for logs/alerts
+│   │   │   └── websocket.py   # WebSocket for real-time updates
+│   │   ├── log_ingester.py    # Kafka consumer for log ingestion
+│   │   ├── log_analyzer.py    # Log analysis logic
+│   │   ├── alert_generator.py # Alert generation logic
+│   │   ├── celery.py          # Celery configuration
+│   │   └── config.py          # Configuration settings
+│   ├── run.py                 # Entry point to run the Flask app
+│   ├── requirements.txt       # Python dependencies
+│   ├── Dockerfile             # Docker configuration for this service
+│   └── 📂 tests/
+│       └── test_logging.py    # Unit/integration tests
+├── 📂 frontend/
+├── docker-compose.yml         # Docker Compose for local orchestration
+├── README.md                  # Project overview and instructions
+├── .gitignore                 # Git ignore file
+└── 📂 docs/
 ```
 [To be completed]  
 
