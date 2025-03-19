@@ -3,16 +3,14 @@
 A logging and monitoring system that tracks authentication events, detects suspicious patterns, and provides real-time visualization. The project simulates basic security monitoring for authentication activity.  
 
 ## **Table of Contents**  
-- [**Enterprise Logging and Monitoring System (Simplified SIEM)**](#enterprise-logging-and-monitoring-system-simplified-siem)
-  - [**Table of Contents**](#table-of-contents)
-  - [**Overview**](#overview)
-  - [**Features**](#features)
-  - [**Installation \& Setup**](#installation--setup)
-  - [**Usage**](#usage)
-  - [**Development Guide**](#development-guide)
-  - [**Project Structure**](#project-structure)
-  - [**Additional Documentation**](#additional-documentation)
-  - [**Team Members \& Contact**](#team-members--contact)
+- [**Overview**](#overview)
+- [**Features**](#features)
+- [**Installation \& Setup**](#installation--setup)
+- [**Usage**](#usage)
+- [**Development Guide**](#development-guide)
+- [**Project Structure**](#project-structure)
+- [**Additional Documentation**](#additional-documentation)
+- [**Team Members \& Contact**](#team-members--contact)
 
 ---
 
