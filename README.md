@@ -10,7 +10,7 @@ A logging and monitoring system that tracks authentication events, detects suspi
   - [**Installation \& Setup**](#installation--setup)
   - [**Usage**](#usage)
   - [**Development Guide**](#development-guide)
-    - [**Project Structure**](#project-structure)
+  - [**Project Structure**](#project-structure)
   - [**Additional Documentation**](#additional-documentation)
   - [**Team Members \& Contact**](#team-members--contact)
 
