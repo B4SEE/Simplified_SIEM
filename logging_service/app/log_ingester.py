@@ -33,5 +33,7 @@ def produce_log(log_data):
         # Wait up to 1 second for events. Callbacks will be invoked during
         # this method call if the message is acknowledged.
         producer.poll(1)
+        return True
     except Exception as e:
         print(f'Failed to produce log: {e}')
+        return False
