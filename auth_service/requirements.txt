@@ -1,0 +1,12 @@
+flask>=2.0.1
+flask-sqlalchemy>=3.0.0
+sqlalchemy>=1.4.0
+werkzeug>=2.0.0
+psycopg2-binary>=2.9.0
+python-dateutil>=2.8.2
+kafka-python>=2.0.0
+redis>=4.0.0
+celery>=5.0.0
+flask-migrate>=3.0.0
+alembic>=1.7.0
+email-validator>=1.1.0
