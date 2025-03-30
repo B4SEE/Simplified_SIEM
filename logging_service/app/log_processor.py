@@ -2,6 +2,7 @@ import json
 import os
 import sys
 
+from flask import jsonify
 from kafka import KafkaConsumer
 from elasticsearch import Elasticsearch
 
@@ -26,6 +27,11 @@ print(consumer.subscription(), file=sys.stderr)
 
 es = Elasticsearch([{'host': 'elasticsearch', 'port': 9200, 'scheme': 'http'}])
 
+es.indices.create(index='our_logs', ignore=400)  # Ignore 400 error if index already exists
+
+
+
+
 def consume_log():
     msg = consumer.poll(10)
     if msg is None:
@@ -41,6 +47,6 @@ def consume_log():
 
 def store_log(log_entry):
     es.index(index='our_logs', body=log_entry, headers={"Content-Type": "application/json"})
-    print('save log to index: ' + log_entry, file=sys.stderr)
+    print('save log to index: ' + json.dumps(log_entry), file=sys.stderr)
 
 # kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic logs --from-beginning
