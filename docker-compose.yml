@@ -1,6 +1,24 @@
 version: '3.8'
 
 services:
+  # Database service
+  postgres:
+    image: postgres:13
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: siem_user
+      POSTGRES_PASSWORD: secure_password
+      POSTGRES_DB: siem_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Redis for Celery tasks
+  redis:
+    image: redis:6
+    ports:
+      - "6379:6379"
+
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     ports:
@@ -19,6 +37,26 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    depends_on:
+      - zookeeper
+
+  auth_service:
+    build:
+      context: ./auth_service
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5000"  # Map to a different host port to avoid conflict
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+    environment:
+      DATABASE_URI: postgresql://siem_user:secure_password@postgres:5432/siem_db
+      REDIS_URL: redis://redis:6379/0
+      KAFKA_BROKER: kafka:9092
+      SECRET_KEY: dev-key-change-in-production
+      FLASK_APP: run.py
+      FLASK_ENV: development
 
   logging_service:
     build:
@@ -27,6 +65,15 @@ services:
     ports:
       - "5000:5000"
     depends_on:
+      - postgres
       - kafka
+      - auth_service
     environment:
+      DATABASE_URL: postgresql://siem_user:secure_password@postgres:5432/siem_db
       KAFKA_BROKER: kafka:9092
+      SECRET_KEY: dev-key-change-in-production
+      FLASK_APP: run.py
+      FLASK_ENV: development
+
+volumes:
+  postgres_data:
