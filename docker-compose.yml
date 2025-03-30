@@ -19,6 +19,9 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    depends_on:
+      zookeeper:
+        condition: service_started
 
   logging_service:
     build:
@@ -27,6 +30,28 @@ services:
     ports:
       - "5000:5000"
     depends_on:
-      - kafka
+      zookeeper:
+        condition: service_started
+      kafka:
+        condition: service_started
+      elasticsearch:
+        condition: service_started
     environment:
-      KAFKA_BROKER: kafka:9092
+      KAFKA_BROKER: "kafka:9092"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.16.6
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.16.6
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_started
+
