@@ -10,6 +10,11 @@ services:
       POSTGRES_USER: siem_user
       POSTGRES_PASSWORD: secure_password
       POSTGRES_DB: siem_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U siem_user -d siem_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -47,9 +52,12 @@ services:
     ports:
       - "5001:5000"  # Map to a different host port to avoid conflict
     depends_on:
-      - postgres
-      - redis
-      - kafka
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      kafka:
+        condition: service_started
     environment:
       DATABASE_URI: postgresql://siem_user:secure_password@postgres:5432/siem_db
       REDIS_URL: redis://redis:6379/0
@@ -65,9 +73,12 @@ services:
     ports:
       - "5000:5000"
     depends_on:
-      - postgres
-      - kafka
-      - auth_service
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      auth_service:
+        condition: service_started
     environment:
       DATABASE_URL: postgresql://siem_user:secure_password@postgres:5432/siem_db
       KAFKA_BROKER: kafka:9092

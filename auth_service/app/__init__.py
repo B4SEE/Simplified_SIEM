@@ -22,4 +22,9 @@ def create_app(config_name='default'):
     from .models.role import Role
     from .models.login_log import LoginLog
 
+    # Create all tables when the app starts
+    with app.app_context():
+        db.create_all()
+        app.logger.info("Database tables created")
+
     return app
