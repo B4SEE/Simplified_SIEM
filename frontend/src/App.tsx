@@ -1,5 +1,5 @@
 import React from 'react';
-import DashboardLayout from './components/DashboardLayout';
+import DashboardLayout from './components/dashboardLayout/DashboardLayout';
 import { Container, Paper, Typography } from '@mui/material';
 
 const App: React.FC = () => {

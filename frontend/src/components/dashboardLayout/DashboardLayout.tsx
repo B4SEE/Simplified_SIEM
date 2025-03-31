@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
-import {
-  AppBar,
-  Box,
-  CssBaseline,
-  IconButton,
-  Toolbar,
-  Typography,
-} from '@mui/material';
+import { Box, CssBaseline, Toolbar, Typography } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
-import Sidebar from './Sidebar';
-import { SIDEBAR_WIDTH } from '../consts/sidebarConsts';
+import Sidebar from '../sidebar/Sidebar';
+import {
+  ContentBox,
+  StyledAppBar,
+  StyledIconButton,
+} from './StyledDasboardLayout';
 
 const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -24,25 +21,22 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
 
-      <AppBar
-        position='fixed'
-        sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
-      >
+      {/* AppBar */}
+      <StyledAppBar position='fixed'>
         <Toolbar>
-          <IconButton
+          <StyledIconButton
             color='inherit'
             aria-label='open drawer'
             edge='start'
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
           >
             <MenuIcon />
-          </IconButton>
+          </StyledIconButton>
           <Typography variant='h6' noWrap>
             Logging Dashboard
           </Typography>
         </Toolbar>
-      </AppBar>
+      </StyledAppBar>
 
       {/* Sidebar */}
       <Sidebar
@@ -50,20 +44,11 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({
         handleDrawerToggle={handleDrawerToggle}
       />
 
-      {/* Page content */}
-      <Box
-        component='main'
-        sx={{
-          flexGrow: 1,
-          p: 3,
-          ml: { sm: `${SIDEBAR_WIDTH}px` },
-          transition: 'margin-left 0.3s',
-          width: '100%',
-        }}
-      >
+      {/* Page Content */}
+      <ContentBox component='main'>
         <Toolbar />
         {children}
-      </Box>
+      </ContentBox>
     </Box>
   );
 };
