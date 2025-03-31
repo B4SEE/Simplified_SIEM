@@ -8,11 +8,13 @@ import {
 } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import SecurityIcon from '@mui/icons-material/Security';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   SidebarContainer,
   StyledDrawerMobile,
   StyledDrawerDesktop,
 } from './StyledSidebar';
+import { NavLink } from 'react-router-dom';
 
 const Sidebar: React.FC<{
   mobileOpen: boolean;
@@ -22,17 +24,25 @@ const Sidebar: React.FC<{
     <SidebarContainer>
       <Toolbar />
       <List>
-        <ListItemButton>
+        <ListItemButton component={NavLink} to='/dashboard'>
           <ListItemIcon>
             <DashboardIcon />
           </ListItemIcon>
           <ListItemText primary='Dashboard' />
         </ListItemButton>
-        <ListItemButton>
+
+        <ListItemButton component={NavLink} to='/logs'>
           <ListItemIcon>
             <SecurityIcon />
           </ListItemIcon>
-          <ListItemText primary='Security Logs' />
+          <ListItemText primary='Logs' />
+        </ListItemButton>
+
+        <ListItemButton component={NavLink} to='/alerts'>
+          <ListItemIcon>
+            <WarningAmberIcon />
+          </ListItemIcon>
+          <ListItemText primary='Alerts' />
         </ListItemButton>
       </List>
     </SidebarContainer>
