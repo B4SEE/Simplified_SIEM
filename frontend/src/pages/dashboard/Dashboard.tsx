@@ -9,6 +9,8 @@ import {
   LastLoginText,
 } from './StyledDashboard';
 import colors from '../../theme/colors';
+import { mockLogsGraphData } from '../../mock-data/mockLogsData';
+import LogsChart from '../../components/logsChart/LogsChart';
 
 const Dashboard: React.FC = () => {
   return (
@@ -38,6 +40,12 @@ const Dashboard: React.FC = () => {
           <Typography variant='h4'>{mockStatsData.alertsCount}</Typography>
         </StatBox>
       </StatBoxContainer>
+
+      <Typography variant='h6' sx={{ marginTop: 4 }}>
+        Login Activity (Last 7 Days)
+      </Typography>
+
+      <LogsChart data={mockLogsGraphData} />
 
       <LastLoginText variant='h6'>
         Last Login: {mockStatsData.lastLogin}

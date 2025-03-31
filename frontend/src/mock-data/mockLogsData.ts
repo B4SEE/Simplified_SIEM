@@ -32,3 +32,13 @@ export const mockLogsData = [
     alert: true,
   },
 ];
+
+export const mockLogsGraphData = [
+  { date: 'Mar 24', logs: 200, failed: 50 },
+  { date: 'Mar 25', logs: 180, failed: 40 },
+  { date: 'Mar 26', logs: 220, failed: 60 },
+  { date: 'Mar 27', logs: 250, failed: 70 },
+  { date: 'Mar 28', logs: 230, failed: 55 },
+  { date: 'Mar 29', logs: 270, failed: 80 },
+  { date: 'Mar 30', logs: 300, failed: 90 },
+];
