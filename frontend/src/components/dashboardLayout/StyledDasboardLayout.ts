@@ -1,5 +1,5 @@
 import { styled } from '@mui/material/styles';
-import { Box, AppBar, IconButton } from '@mui/material';
+import { Box, AppBar, IconButton, Typography } from '@mui/material';
 import { SIDEBAR_WIDTH } from '../../consts/sidebarConsts';
 
 export const StyledAppBar = styled(AppBar)(({ theme }) => ({
@@ -26,4 +26,9 @@ export const StyledIconButton = styled(IconButton)(({ theme }) => ({
   [theme.breakpoints.up('sm')]: {
     display: 'none',
   },
+}));
+
+export const AppBarHeader = styled(Typography)(() => ({
+  flexGrow: 1,
+  fontWeight: '600',
 }));

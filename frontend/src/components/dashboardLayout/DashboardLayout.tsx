@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Box, CssBaseline, Toolbar, Typography, Button } from '@mui/material';
+import { Box, CssBaseline, Toolbar, Button } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../sidebar/Sidebar';
 import {
+  AppBarHeader,
   ContentBox,
   StyledAppBar,
   StyledIconButton,
@@ -36,9 +37,9 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({
             <MenuIcon />
           </StyledIconButton>
 
-          <Typography variant='h6' noWrap sx={{ flexGrow: 1 }}>
-            Logging Dashboard
-          </Typography>
+          <AppBarHeader variant='h5' noWrap>
+            MoniLog
+          </AppBarHeader>
 
           <Button
             color='inherit'
