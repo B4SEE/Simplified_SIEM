@@ -4,7 +4,7 @@ import { SIDEBAR_WIDTH } from '../../consts/sidebarConsts';
 
 export const StyledDrawerMobile = styled(Drawer)(({ theme }) => ({
   display: 'block',
-  [theme.breakpoints.up('sm')]: {
+  [theme.breakpoints.up('md')]: {
     display: 'none',
   },
   '& .MuiDrawer-paper': {
@@ -14,7 +14,7 @@ export const StyledDrawerMobile = styled(Drawer)(({ theme }) => ({
 
 export const StyledDrawerDesktop = styled(Drawer)(({ theme }) => ({
   display: 'none',
-  [theme.breakpoints.up('sm')]: {
+  [theme.breakpoints.up('md')]: {
     display: 'block',
   },
   '& .MuiDrawer-paper': {

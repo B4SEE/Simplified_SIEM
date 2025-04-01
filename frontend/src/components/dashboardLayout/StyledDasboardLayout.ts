@@ -13,17 +13,17 @@ export const ContentBox = styled(Box)<{ component?: React.ElementType }>(
     marginLeft: `${SIDEBAR_WIDTH}px`,
     transition: 'margin-left 0.3s',
     width: '100%',
-    [theme.breakpoints.down('sm')]: {
+    [theme.breakpoints.down('md')]: {
       marginLeft: 0,
     },
   })
 );
 
 export const StyledIconButton = styled(IconButton)(({ theme }) => ({
-  [theme.breakpoints.down('sm')]: {
+  [theme.breakpoints.down('md')]: {
     display: 'inline-flex',
   },
-  [theme.breakpoints.up('sm')]: {
+  [theme.breakpoints.up('md')]: {
     display: 'none',
   },
 }));

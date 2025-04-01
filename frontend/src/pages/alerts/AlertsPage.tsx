@@ -11,9 +11,11 @@ import {
 import { mockAlertsData } from '../../mock-data/mockAlertsData';
 import {
   StyledButton,
+  StyledIconButton,
   StyledSeverityCell,
   StyledTableContainer,
 } from './StyledAlertsPage';
+import { CheckCircle, Undo } from '@mui/icons-material';
 
 const AlertsPage: React.FC = () => {
   const [alerts, setAlerts] = useState(mockAlertsData);
@@ -48,6 +50,12 @@ const AlertsPage: React.FC = () => {
               </StyledSeverityCell>
               <TableCell>{alert.resolved ? '✅ Yes' : '❌ No'}</TableCell>
               <TableCell>
+                <StyledIconButton
+                  onClick={() => toggleResolved(alert.id)}
+                  color={alert.resolved ? 'warning' : 'success'}
+                >
+                  {alert.resolved ? <Undo /> : <CheckCircle />}
+                </StyledIconButton>
                 <StyledButton
                   variant='contained'
                   color={alert.resolved ? 'warning' : 'success'}
