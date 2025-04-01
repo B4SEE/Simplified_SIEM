@@ -7,10 +7,8 @@ def create_app(config_name='default'):
     app = Flask(__name__)
 
     # Load configuration
-    if config_name == 'default':
-        app.config.from_object('app.config.Config')
-    else:
-        app.config.from_object(f'app.config.{config_name.capitalize()}Config')
+    from .config import Config
+    app.config.from_object(Config)
 
     # Initialize extensions
     db.init_app(app)
@@ -23,5 +21,10 @@ def create_app(config_name='default'):
     from .models.user import User
     from .models.role import Role
     from .models.login_log import LoginLog
+
+    # Create all tables when the app starts
+    with app.app_context():
+        db.create_all()
+        app.logger.info("Database tables created")
 
     return app
