@@ -7,12 +7,12 @@ import {
   StatBoxContainer,
   StatBox,
   LastLoginText,
-} from './StyledDashboard';
+} from './StyledDashboardPage';
 import colors from '../../theme/colors';
 import { mockLogsGraphData } from '../../mock-data/mockLogsData';
 import LogsChart from '../../components/logsChart/LogsChart';
 
-const Dashboard: React.FC = () => {
+const DashboardPage: React.FC = () => {
   return (
     <DashboardContainer>
       <Title variant='h4' gutterBottom>
@@ -54,4 +54,4 @@ const Dashboard: React.FC = () => {
   );
 };
 
-export default Dashboard;
+export default DashboardPage;

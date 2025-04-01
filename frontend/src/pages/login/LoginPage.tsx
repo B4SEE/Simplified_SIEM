@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { TextField, Typography, Container } from '@mui/material';
-import { LoginBox, StyledButton, StyledForm } from './StyledLogin';
+import { LoginBox, StyledButton, StyledForm } from './StyledLoginPage';
 
-const Login: React.FC = () => {
+const LoginPage: React.FC = () => {
   const [credentials, setCredentials] = useState({
     username: '',
     password: '',
@@ -63,4 +63,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login;
+export default LoginPage;

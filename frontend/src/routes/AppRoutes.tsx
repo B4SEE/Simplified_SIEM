@@ -1,21 +1,21 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import Login from '../pages/login/Login';
-import Dashboard from '../pages/dashboard/Dashboard';
-import Logs from '../pages/logs/Logs';
-import Alerts from '../pages/alerts/Alerts';
 import DashboardLayout from '../components/dashboardLayout/DashboardLayout';
+import AlertsPage from '../pages/alerts/AlertsPage';
+import DashboardPage from '../pages/dashboard/DashboardPage';
+import LoginPage from '../pages/login/LoginPage';
+import LogsPage from '../pages/logs/LogsPage';
 
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
-      <Route path='/login' element={<Login />} />
+      <Route path='/login' element={<LoginPage />} />
 
       <Route
         path='/dashboard'
         element={
           <DashboardLayout>
-            <Dashboard />
+            <DashboardPage />
           </DashboardLayout>
         }
       />
@@ -23,7 +23,7 @@ const AppRoutes: React.FC = () => {
         path='/logs'
         element={
           <DashboardLayout>
-            <Logs />
+            <LogsPage />
           </DashboardLayout>
         }
       />
@@ -31,7 +31,7 @@ const AppRoutes: React.FC = () => {
         path='/alerts'
         element={
           <DashboardLayout>
-            <Alerts />
+            <AlertsPage />
           </DashboardLayout>
         }
       />

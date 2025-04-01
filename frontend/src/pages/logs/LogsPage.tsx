@@ -28,7 +28,7 @@ const generateRandomLog = () => {
   };
 };
 
-const Logs: React.FC = () => {
+const LogsPage: React.FC = () => {
   const [logs, setLogs] = useState(mockLogsData);
   const [filterAlerts, setFilterAlerts] = useState(false);
 
@@ -83,4 +83,4 @@ const Logs: React.FC = () => {
   );
 };
 
-export default Logs;
+export default LogsPage;
