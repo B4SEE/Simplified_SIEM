@@ -1,7 +1,6 @@
 import json
 import os
 import sys
-from http.client import responses
 
 from confluent_kafka import Consumer
 from elasticsearch import Elasticsearch
@@ -33,9 +32,9 @@ class LogProcessorSingleton:
         self.consumer.subscribe(['logs'])
 
         # Elasticsearch configuration
-        self.__es = Elasticsearch("http://localhost:9200")
+        self.__es = Elasticsearch([{'host': 'elasticsearch', 'port': 9200, 'scheme': 'http'}])
         # self.__es = Elasticsearch([{'host': 'elasticsearch', 'port': 9200, 'scheme': 'http'}])
-        info = self.__es.info()
+        info = self.__es.cat.count()
         response = self.__es.indices.create(index='our_logs')  # Ignore 400 error if index already exists
 
         print("index created response: " + str(response), file=sys.stderr)
@@ -49,7 +48,6 @@ class LogProcessorSingleton:
         print('save log to index: ' + json.dumps(log_entry), file=sys.stderr)
 
     def consume_log(self):
-        print(f"Indices: {self.__es.cat.indices()}", file=sys.stderr)
 
         msg = self.consumer.poll(1.0)
         if msg is None:
