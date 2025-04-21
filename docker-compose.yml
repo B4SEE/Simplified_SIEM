@@ -95,7 +95,7 @@ services:
       FLASK_APP: ./run.py
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.16.6
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.0.0
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
