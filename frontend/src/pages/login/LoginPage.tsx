@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { TextField, Typography, Container } from '@mui/material';
 import { LoginBox, StyledButton, StyledForm } from './StyledLoginPage';
+import { Link } from 'react-router-dom';
 
 const LoginPage: React.FC = () => {
   const [credentials, setCredentials] = useState({
@@ -58,6 +59,13 @@ const LoginPage: React.FC = () => {
             Login
           </StyledButton>
         </StyledForm>
+        <Typography
+          variant='body2'
+          align='center'
+          style={{ marginTop: '1rem' }}
+        >
+          Don’t have an account? <Link to='/register'>Register</Link>
+        </Typography>
       </LoginBox>
     </Container>
   );
