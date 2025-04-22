@@ -3,6 +3,7 @@ from flask import Flask
 from .models import db
 from .models.log_entry import LogEntry
 from .blueprints.api import api_bp
+from .kafka_consumer import start_kafka_consumer_thread
 
 
 def create_app():
@@ -15,5 +16,7 @@ def create_app():
     with app.app_context():
         db.create_all()
         app.logger.info("Logging database tables created")
+
+    start_kafka_consumer_thread()
 
     return app
