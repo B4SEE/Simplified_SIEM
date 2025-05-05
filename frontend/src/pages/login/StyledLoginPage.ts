@@ -1,9 +1,9 @@
 import { styled } from '@mui/material/styles';
-import { Paper, Button, Box } from '@mui/material';
+import { Paper, Button } from '@mui/material';
 
 export const LoginBox = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
-  marginTop: theme.spacing(8),
+  marginTop: theme.spacing(4),
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
