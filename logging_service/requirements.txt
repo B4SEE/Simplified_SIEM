@@ -5,3 +5,4 @@ kafka-python>=2.1.2
 confluent_kafka>=2.8.2
 elasticsearch>=8.17.2
 psycopg2-binary>=2.9.0
+celery[redis]
