@@ -17,6 +17,7 @@ import {
 } from './StyledAlertsPage';
 import { CheckCircle, Undo } from '@mui/icons-material';
 
+
 const AlertsPage: React.FC = () => {
   const [alerts, setAlerts] = useState(mockAlertsData);
 

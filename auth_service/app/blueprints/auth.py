@@ -8,6 +8,7 @@ import json
 import uuid
 import re
 from functools import wraps
+import sys
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
@@ -125,6 +126,8 @@ def login():
         }
         producer.produce('logs', value=json.dumps(log_event))
         producer.flush()
+        print('📣 [AUTH SERVICE] Produced login_failed event to Kafka', flush=True)
+
 
         return jsonify({'message': 'Invalid credentials', 'status': 'error'}), 401
 

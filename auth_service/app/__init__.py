@@ -1,10 +1,10 @@
-# auth_service/app/__init__.py
-
 from flask import Flask
+from flask_cors import CORS
 from .models import db
 
 def create_app(config_name='default'):
     app = Flask(__name__)
+    CORS(app, origins=["http://localhost:3000"])
 
     # Load configuration
     from .config import Config

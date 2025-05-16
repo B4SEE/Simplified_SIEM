@@ -88,5 +88,4 @@ const UserPage: React.FC = () => {
     </Container>
   );
 };
-
 export default UserPage;
