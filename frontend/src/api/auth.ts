@@ -1,16 +1,18 @@
-import axios from "axios";
+import axios from 'axios';
 
-const BASE_URL = "http://localhost:5001/api/auth";
+const BASE_URL = 'http://localhost:5001/api/auth';
 
 export const checkAuthStatus = async () => {
   return axios.get(`${BASE_URL}/status`);
 };
 
-export const login = async (credentials: { username: string; password: string }) => {
+export const login = async (credentials: {
+  username: string;
+  password: string;
+}) => {
   const response = await axios.post(`${BASE_URL}/login`, credentials);
   return response.data;
 };
-
 
 export const register = async (data: {
   username: string;
@@ -25,7 +27,7 @@ export const register = async (data: {
     return response.data;
   } catch (error: any) {
     const message =
-      error.response?.data?.message || error.message || "Registration failed.";
+      error.response?.data?.message || error.message || 'Registration failed.';
     throw new Error(message);
   }
 };

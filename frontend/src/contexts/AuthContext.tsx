@@ -7,6 +7,7 @@ type AuthState = {
   token: string | null;
   refresh: () => Promise<void>;
   logout: () => void;
+  setAuthToken: (token: string | null) => void;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -19,6 +20,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   );
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const setAuthToken = (newToken: string | null) => {
+    setToken(newToken);
+    if (newToken) {
+      localStorage.setItem('token', newToken);
+    } else {
+      localStorage.removeItem('token');
+    }
+  };
 
   const refresh = async () => {
     if (!token) {
@@ -35,6 +45,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const login = (newToken: string) => {
+    localStorage.setItem('token', newToken);
+    setToken(newToken);
+    setIsLoggedIn(true);
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     setToken(null);
@@ -43,9 +59,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     refresh().finally(() => setIsLoading(false));
-  }, []);
+  }, [token]);
 
-  const value: AuthState = { isLoading, isLoggedIn, token, refresh, logout };
+  const value = {
+    isLoading,
+    isLoggedIn,
+    token,
+    refresh,
+    logout,
+    login,
+    setAuthToken,
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

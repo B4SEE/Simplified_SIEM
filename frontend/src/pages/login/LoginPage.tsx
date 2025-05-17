@@ -4,9 +4,12 @@ import { LoginBox, StyledButton, StyledForm } from './StyledLoginPage';
 import { Link } from 'react-router-dom';
 import { login } from '../../api/auth';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const { setAuthToken } = useAuth();
+
   const [credentials, setCredentials] = useState({
     username: '',
     password: '',
@@ -31,8 +34,7 @@ const LoginPage: React.FC = () => {
       const data = await login(credentials);
       console.log('Login successful:', data);
 
-      // Store token and user ID
-      localStorage.setItem('token', data.token);
+      setAuthToken(data.token);
       localStorage.setItem('user_id', data.user_id);
 
       navigate('/dashboard');
