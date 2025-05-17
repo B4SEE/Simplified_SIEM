@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { Box, CssBaseline, Toolbar, Button } from '@mui/material';
+import {
+  Box,
+  CssBaseline,
+  Toolbar,
+  Button,
+  Tooltip,
+  IconButton,
+} from '@mui/material';
+import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
 import { useNavigate } from 'react-router-dom';
@@ -46,13 +54,20 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({
 
           {!isLoading &&
             (isLoggedIn ? (
-              <Button
-                color='inherit'
-                startIcon={<PersonIcon />}
-                onClick={() => navigate('/profile')}
-              >
-                Profile
-              </Button>
+              <>
+                <Button
+                  color='inherit'
+                  startIcon={<PersonIcon />}
+                  onClick={() => navigate('/profile')}
+                >
+                  Profile
+                </Button>
+                <Tooltip title='Log Out'>
+                  <IconButton color='inherit' onClick={logout}>
+                    <LogoutIcon />
+                  </IconButton>
+                </Tooltip>
+              </>
             ) : (
               <Button
                 color='inherit'

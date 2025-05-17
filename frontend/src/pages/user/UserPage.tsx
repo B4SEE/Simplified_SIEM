@@ -75,14 +75,6 @@ const UserPage: React.FC = () => {
           <StyledButton type='submit' variant='contained' fullWidth>
             Save Changes
           </StyledButton>
-          <StyledButton
-            variant='outlined'
-            onClick={handleLogout}
-            fullWidth
-            style={{ marginTop: '1rem' }}
-          >
-            Log Out
-          </StyledButton>
         </StyledForm>
       </LoginBox>
     </Container>
