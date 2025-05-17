@@ -10,11 +10,14 @@ import {
   StyledAppBar,
   StyledIconButton,
 } from './StyledDasboardLayout';
+import { useAuth } from '../../contexts/AuthContext';
 
 const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { isLoading, isLoggedIn, logout } = useAuth();
+
   const navigate = useNavigate();
 
   const handleDrawerToggle = () => {
@@ -41,13 +44,24 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({
             MoniLog
           </AppBarHeader>
 
-          <Button
-            color='inherit'
-            startIcon={<PersonIcon />}
-            onClick={() => navigate('/login')}
-          >
-            Log in
-          </Button>
+          {!isLoading &&
+            (isLoggedIn ? (
+              <Button
+                color='inherit'
+                startIcon={<PersonIcon />}
+                onClick={() => navigate('/profile')}
+              >
+                Profile
+              </Button>
+            ) : (
+              <Button
+                color='inherit'
+                startIcon={<PersonIcon />}
+                onClick={() => navigate('/login')}
+              >
+                Log in
+              </Button>
+            ))}
         </Toolbar>
       </StyledAppBar>
 

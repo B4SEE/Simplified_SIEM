@@ -1,12 +1,9 @@
-
 import React, { useState } from 'react';
 import { TextField, Typography, Container } from '@mui/material';
 import { LoginBox, StyledButton, StyledForm } from './StyledLoginPage';
 import { Link } from 'react-router-dom';
 import { login } from '../../api/auth';
 import { useNavigate } from 'react-router-dom';
-
-
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -24,20 +21,20 @@ const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-  
+
     if (!credentials.username || !credentials.password) {
       setError('Please enter both username and password.');
       return;
     }
-  
+
     try {
       const data = await login(credentials);
       console.log('Login successful:', data);
-      
+
       // Store token and user ID
       localStorage.setItem('token', data.token);
       localStorage.setItem('user_id', data.user_id);
-  
+
       navigate('/dashboard');
     } catch (err: any) {
       const msg =
@@ -45,7 +42,6 @@ const LoginPage: React.FC = () => {
       setError(msg);
     }
   };
-  
 
   return (
     <Container component='main' maxWidth='xs'>
@@ -82,13 +78,6 @@ const LoginPage: React.FC = () => {
             Login
           </StyledButton>
         </StyledForm>
-        <Typography
-          variant='body2'
-          align='center'
-          style={{ marginTop: '1rem' }}
-        >
-          Don’t have an account? <Link to='/register'>Register</Link>
-        </Typography>
         <Typography
           variant='body2'
           align='center'

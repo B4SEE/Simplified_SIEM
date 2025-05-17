@@ -7,8 +7,6 @@ import LoginPage from '../pages/login/LoginPage';
 import LogsPage from '../pages/logs/LogsPage';
 import RegistrationPage from '../pages/registration/RegistrationPage';
 import UserPage from '../pages/user/UserPage';
-import RegistrationPage from '../pages/registration/RegistrationPage';
-import UserPage from '../pages/user/UserPage';
 
 const AppRoutes: React.FC = () => {
   return (
