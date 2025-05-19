@@ -124,3 +124,5 @@ services:
       
 volumes:
   postgres_data:
+
+# celery -A app.celery.celery_app worker --beat --loglevel=info
