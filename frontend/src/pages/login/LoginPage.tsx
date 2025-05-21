@@ -8,7 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { setAuthToken } = useAuth();
+  const { setAuthToken, setUserId } = useAuth();
 
   const [credentials, setCredentials] = useState({
     username: '',
@@ -35,7 +35,7 @@ const LoginPage: React.FC = () => {
       console.log('Login successful:', data);
 
       setAuthToken(data.token);
-      localStorage.setItem('user_id', data.user_id);
+      setUserId(data.user_id);
 
       navigate('/dashboard');
     } catch (err: any) {

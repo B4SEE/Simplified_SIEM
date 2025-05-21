@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Table,
   TableBody,
@@ -6,7 +6,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Button,
 } from '@mui/material';
 import { mockAlertsData } from '../../mock-data/mockAlertsData';
 import {
@@ -16,10 +15,26 @@ import {
   StyledTableContainer,
 } from './StyledAlertsPage';
 import { CheckCircle, Undo } from '@mui/icons-material';
-
+import { getProfile } from '../../api/auth';
+import { useAuth } from '../../contexts/AuthContext';
 
 const AlertsPage: React.FC = () => {
   const [alerts, setAlerts] = useState(mockAlertsData);
+  const { token, userId } = useAuth();
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!token || !userId) return;
+      try {
+        const response = await getProfile(token, userId);
+        console.log('👤 Profile response:', response.data);
+      } catch (error) {
+        console.error('❌ Failed to fetch profile:', error);
+      }
+    };
+
+    fetchProfile();
+  }, [token, userId]);
 
   const toggleResolved = (id: number) => {
     setAlerts((prevAlerts) =>

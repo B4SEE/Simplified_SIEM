@@ -32,10 +32,11 @@ export const register = async (data: {
   }
 };
 
-export const getProfile = async (token: string) => {
+export const getProfile = async (token: string, userId: number) => {
   return axios.get(`${BASE_URL}/profile`, {
     headers: {
       Authorization: `Bearer ${token}`,
+      'X-User-ID': String(userId),
     },
   });
 };
