@@ -1,10 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { TextField, Typography, Container } from '@mui/material';
+import {
+  TextField,
+  Typography,
+  Container,
+  Snackbar,
+  Alert,
+} from '@mui/material';
 import { LoginBox, StyledButton, StyledForm } from '../login/StyledLoginPage';
 import { useAuth } from '../../contexts/AuthContext';
-import { getProfile } from '../../api/auth';
+import { getProfile, updateProfile } from '../../api/auth';
 
 const UserPage: React.FC = () => {
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+
   const { token, userId } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
@@ -41,13 +50,58 @@ const UserPage: React.FC = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Saving updated user info:', formData);
+    if (!token || !userId) return;
+
+    try {
+      const response = await updateProfile(token, userId, {
+        username: formData.username,
+        email: formData.email,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+      });
+
+      setSuccessMessage(
+        response.data.message || 'Profile updated successfully'
+      );
+    } catch (error: any) {
+      const msg = error.response?.data?.message || 'Failed to update profile.';
+      setErrorMessage(msg);
+      console.error('❌ Failed to update profile:', error);
+    }
   };
 
   return (
     <Container component='main' maxWidth='xs'>
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={3000}
+        onClose={() => setSuccessMessage('')}
+      >
+        <Alert
+          onClose={() => setSuccessMessage('')}
+          severity='success'
+          sx={{ width: '100%' }}
+        >
+          {successMessage}
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={!!errorMessage}
+        autoHideDuration={3000}
+        onClose={() => setErrorMessage('')}
+      >
+        <Alert
+          onClose={() => setErrorMessage('')}
+          severity='error'
+          sx={{ width: '100%' }}
+        >
+          {errorMessage}
+        </Alert>
+      </Snackbar>
+
       <LoginBox elevation={3}>
         <Typography variant='h5' gutterBottom>
           Account Settings

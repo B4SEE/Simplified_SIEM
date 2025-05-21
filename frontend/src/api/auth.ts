@@ -43,6 +43,7 @@ export const getProfile = async (token: string, userId: number) => {
 
 export const updateProfile = async (
   token: string,
+  userId: number,
   profileData: {
     username: string;
     email: string;
@@ -53,6 +54,7 @@ export const updateProfile = async (
   return axios.put(`${BASE_URL}/profile`, profileData, {
     headers: {
       Authorization: `Bearer ${token}`,
+      'X-User-ID': String(userId),
       'Content-Type': 'application/json',
     },
   });

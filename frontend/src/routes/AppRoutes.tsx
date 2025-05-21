@@ -7,6 +7,7 @@ import LoginPage from '../pages/login/LoginPage';
 import LogsPage from '../pages/logs/LogsPage';
 import RegistrationPage from '../pages/registration/RegistrationPage';
 import UserPage from '../pages/user/UserPage';
+import PrivateRoute from './PrivateRoute';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -17,41 +18,41 @@ const AppRoutes: React.FC = () => {
       <Route
         path='/dashboard'
         element={
-          <DashboardLayout>
-            <DashboardPage />
-          </DashboardLayout>
+          <PrivateRoute>
+            <DashboardLayout>
+              <DashboardPage />
+            </DashboardLayout>
+          </PrivateRoute>
         }
       />
       <Route
         path='/logs'
         element={
-          <DashboardLayout>
-            <LogsPage />
-          </DashboardLayout>
+          <PrivateRoute>
+            <DashboardLayout>
+              <LogsPage />
+            </DashboardLayout>
+          </PrivateRoute>
         }
       />
       <Route
         path='/alerts'
         element={
-          <DashboardLayout>
-            <AlertsPage />
-          </DashboardLayout>
-        }
-      />
-      <Route
-        path='/register'
-        element={
-          <DashboardLayout>
-            <RegistrationPage />
-          </DashboardLayout>
+          <PrivateRoute>
+            <DashboardLayout>
+              <AlertsPage />
+            </DashboardLayout>
+          </PrivateRoute>
         }
       />
       <Route
         path='/profile'
         element={
-          <DashboardLayout>
-            <UserPage />
-          </DashboardLayout>
+          <PrivateRoute>
+            <DashboardLayout>
+              <UserPage />
+            </DashboardLayout>
+          </PrivateRoute>
         }
       />
 
