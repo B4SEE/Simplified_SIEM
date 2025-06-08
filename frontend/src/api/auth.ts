@@ -2,6 +2,7 @@ import axios from 'axios';
 
 const BASE_URL = 'http://localhost:5001/api/auth';
 
+// Public endpoints - no auth required
 export const checkAuthStatus = async () => {
   return axios.get(`${BASE_URL}/status`);
 };
@@ -32,11 +33,12 @@ export const register = async (data: {
   }
 };
 
+// Protected endpoints - require auth
 export const getProfile = async (token: string, userId: number) => {
   return axios.get(`${BASE_URL}/profile`, {
     headers: {
       Authorization: `Bearer ${token}`,
-      'X-User-ID': String(userId),
+      'X-User-Id': String(userId),
     },
   });
 };
@@ -54,7 +56,7 @@ export const updateProfile = async (
   return axios.put(`${BASE_URL}/profile`, profileData, {
     headers: {
       Authorization: `Bearer ${token}`,
-      'X-User-ID': String(userId),
+      'X-User-Id': String(userId),
       'Content-Type': 'application/json',
     },
   });
@@ -62,6 +64,7 @@ export const updateProfile = async (
 
 export const changePassword = async (
   token: string,
+  userId: number,
   data: {
     current_password: string;
     new_password: string;
@@ -71,15 +74,17 @@ export const changePassword = async (
   return axios.put(`${BASE_URL}/password`, data, {
     headers: {
       Authorization: `Bearer ${token}`,
+      'X-User-Id': String(userId),
       'Content-Type': 'application/json',
     },
   });
 };
 
-export const verifyEmail = async (token: string) => {
-  return axios.get(`${BASE_URL}/verify-email/`, {
+export const verifyEmail = async (token: string, userId: number) => {
+  return axios.get(`${BASE_URL}/verify-email`, {
     headers: {
       Authorization: `Bearer ${token}`,
+      'X-User-Id': String(userId),
     },
   });
 };
