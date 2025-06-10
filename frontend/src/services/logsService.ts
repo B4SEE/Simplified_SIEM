@@ -41,7 +41,7 @@ export const fetchLogStats = async (startDate?: string, endDate?: string): Promi
       limit: 1000
     });
 
-    const logs: LogEntry[] = response.data.logs || [];
+    const logs: LogEntry[] = response.logs || [];
     const successfulLogins = logs.filter((log: LogEntry) => log.event_type === 'login_success').length;
     const failedLogins = logs.filter((log: LogEntry) => log.event_type === 'login_failed').length;
     const alertsCount = logs.filter((log: LogEntry) => log.severity === 'high').length;
@@ -74,7 +74,7 @@ export const getLogsGraphData = async (days: number = 7): Promise<LogsGraphData[
       limit: 1000
     });
 
-    const logs = response.data.logs || [];
+    const logs = response.logs || [];
     const graphData: LogsGraphData[] = [];
 
     for (let i = 0; i < days; i++) {
@@ -106,7 +106,7 @@ export const getLogsGraphData = async (days: number = 7): Promise<LogsGraphData[
 export const getRecentLogs = async (limit: number = 10): Promise<LogEntry[]> => {
   try {
     const response = await searchLogs({ limit });
-    return response.data.logs || [];
+    return response.logs || [];
   } catch (error) {
     console.error('Failed to get recent logs:', error);
     throw error;
