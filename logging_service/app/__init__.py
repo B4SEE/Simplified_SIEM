@@ -12,6 +12,8 @@ from .kafka_consumer import start_kafka_consumer_thread
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    app.config['DEBUG'] = False  # Disable auto-reload
+    app.config['USE_RELOADER'] = False  # Disable auto-reload
 
     # Enable CORS for all routes
     CORS(app, resources={

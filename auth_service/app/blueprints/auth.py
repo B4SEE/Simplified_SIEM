@@ -9,6 +9,7 @@ import uuid
 import re
 from functools import wraps
 import sys
+from datetime import datetime
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
@@ -93,7 +94,7 @@ def login():
         # Publish login event to Kafka
         producer = get_kafka_producer()
         log_event = {
-            'timestamp': str(db.func.now()),
+            'timestamp': datetime.utcnow().isoformat(),
             'ip_address': ip_address,
             'event_type': 'login_success',
             'user_ID': user.id,
@@ -118,7 +119,7 @@ def login():
         # Publish failed login event to Kafka
         producer = get_kafka_producer()
         log_event = {
-            'timestamp': str(db.func.now()),
+            'timestamp': datetime.utcnow().isoformat(),
             'ip_address': ip_address,
             'event_type': 'login_failed',
             'user_ID': user.id if user else None,
@@ -127,7 +128,6 @@ def login():
         producer.produce('logs', value=json.dumps(log_event))
         producer.flush()
         print('📣 [AUTH SERVICE] Produced login_failed event to Kafka', flush=True)
-
 
         return jsonify({'message': 'Invalid credentials', 'status': 'error'}), 401
 
@@ -178,7 +178,7 @@ def register():
     # Publish registration event to Kafka
     producer = get_kafka_producer()
     log_event = {
-        'timestamp': str(db.func.now()),
+        'timestamp': datetime.utcnow().isoformat(),
         'ip_address': request.remote_addr,
         'event_type': 'user_registered',
         'user_ID': new_user.id,
@@ -269,7 +269,7 @@ def update_profile():
     # Log the profile update
     producer = get_kafka_producer()
     log_event = {
-        'timestamp': str(db.func.now()),
+        'timestamp': datetime.utcnow().isoformat(),
         'ip_address': request.remote_addr,
         'event_type': 'profile_updated',
         'user_ID': user.id,
@@ -314,7 +314,7 @@ def change_password():
     # Log the password change
     producer = get_kafka_producer()
     log_event = {
-        'timestamp': str(db.func.now()),
+        'timestamp': datetime.utcnow().isoformat(),
         'ip_address': request.remote_addr,
         'event_type': 'password_changed',
         'user_ID': user.id,

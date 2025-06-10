@@ -88,10 +88,13 @@ services:
         condition: service_started
       elasticsearch:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
     environment:
       KAFKA_BROKER: "kafka:9092"
       FLASK_DEBUG: 1
       FLASK_APP: ./run.py
+      DATABASE_URL: postgresql://siem_user:secure_password@postgres:5432/siem_db
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:9.0.0
