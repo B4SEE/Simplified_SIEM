@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { config } from '../config';
 
-const BASE_URL = 'http://localhost:5001/api/alarms';
+const BASE_URL = config.ALARMS_API_URL;
 
 export const getAlarms = async (token: string, userId: string | number) => {
   return axios.get(`${BASE_URL}/`, {

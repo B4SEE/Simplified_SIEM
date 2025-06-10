@@ -9,76 +9,144 @@ import {
   Paper,
   FormControlLabel,
   Switch,
+  CircularProgress,
+  Typography,
+  Pagination,
+  Box,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
-import { mockLogsData } from '../../mock-data/mockLogsData';
+import { getRecentLogs } from '../../services/logsService';
+import type { LogEntry } from '../../services/logsService';
 
-//temp
-const generateRandomLog = () => {
-  const users = ['admin', 'user123', 'guest', 'testUser'];
-  const events = ['Login Attempt', 'Password Change', 'Logout'];
-  const statuses = ['Success', 'Failure'];
-
-  return {
-    id: Date.now(),
-    timestamp: new Date().toISOString().replace('T', ' ').split('.')[0],
-    user: users[Math.floor(Math.random() * users.length)],
-    event: events[Math.floor(Math.random() * events.length)],
-    status: statuses[Math.floor(Math.random() * statuses.length)],
-    alert: Math.random() > 0.7,
-  };
-};
+const LOGS_PER_PAGE = 10;
 
 const LogsPage: React.FC = () => {
-  const [logs, setLogs] = useState(mockLogsData);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filterAlerts, setFilterAlerts] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [eventTypeFilter, setEventTypeFilter] = useState<string>('all');
+
+  const fetchLogs = async () => {
+    try {
+      setLoading(true);
+      const response = await getRecentLogs(LOGS_PER_PAGE * page);
+      setLogs(response);
+      setTotalPages(Math.ceil(response.length / LOGS_PER_PAGE));
+      setError(null);
+    } catch (err) {
+      console.error('Failed to fetch logs:', err);
+      setError('Failed to load logs. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setLogs((prevLogs) => [generateRandomLog(), ...prevLogs]);
-    }, 5000);
-
+    fetchLogs();
+    const interval = setInterval(fetchLogs, 5000); // Refresh every 5 seconds
     return () => clearInterval(interval);
-  }, []);
+  }, [page]);
 
-  const filteredLogs = filterAlerts ? logs.filter((log) => log.alert) : logs;
+  const filteredLogs = logs.filter(log => {
+    const alertFilter = filterAlerts ? log.severity === 'high' : true;
+    const eventFilter = eventTypeFilter === 'all' ? true : log.event_type === eventTypeFilter;
+    return alertFilter && eventFilter;
+  });
+
+  const paginatedLogs = filteredLogs.slice(
+    (page - 1) * LOGS_PER_PAGE,
+    page * LOGS_PER_PAGE
+  );
+
+  const uniqueEventTypes = Array.from(new Set(logs.map(log => log.event_type)));
+
+  if (loading && logs.length === 0) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="400px">
+        <Typography color="error">{error}</Typography>
+      </Box>
+    );
+  }
 
   return (
     <TableContainer component={Paper} sx={{ padding: 2 }}>
-      <FormControlLabel
-        control={
-          <Switch
-            checked={filterAlerts}
-            onChange={() => setFilterAlerts(!filterAlerts)}
-          />
-        }
-        label='Show Only Alerts'
-      />
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={filterAlerts}
+              onChange={() => setFilterAlerts(!filterAlerts)}
+            />
+          }
+          label='Show Only High Severity'
+        />
+        <FormControl sx={{ minWidth: 200 }}>
+          <InputLabel>Event Type</InputLabel>
+          <Select
+            value={eventTypeFilter}
+            onChange={(e) => setEventTypeFilter(e.target.value)}
+            label="Event Type"
+          >
+            <MenuItem value="all">All Events</MenuItem>
+            {uniqueEventTypes.map(type => (
+              <MenuItem key={type} value={type}>{type}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+
       <Table>
         <TableHead>
           <TableRow>
             <TableCell>Timestamp</TableCell>
-            <TableCell>User</TableCell>
-            <TableCell>Event</TableCell>
-            <TableCell>Status</TableCell>
-            <TableCell>Alert</TableCell>
+            <TableCell>User ID</TableCell>
+            <TableCell>Event Type</TableCell>
+            <TableCell>IP Address</TableCell>
+            <TableCell>Severity</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {filteredLogs.map((log) => (
+          {paginatedLogs.map((log) => (
             <TableRow key={log.id}>
-              <TableCell>{log.timestamp}</TableCell>
-              <TableCell>{log.user}</TableCell>
-              <TableCell>{log.event}</TableCell>
+              <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
+              <TableCell>{log.user_ID}</TableCell>
+              <TableCell>{log.event_type}</TableCell>
+              <TableCell>{log.ip_address}</TableCell>
               <TableCell
-                style={{ color: log.status === 'Success' ? 'green' : 'red' }}
+                style={{
+                  color: log.severity === 'high' ? 'red' :
+                         log.severity === 'medium' ? 'orange' : 'green'
+                }}
               >
-                {log.status}
+                {log.severity?.toUpperCase() || 'LOW'}
               </TableCell>
-              <TableCell>{log.alert ? '🚨 Yes' : 'No'}</TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+
+      <Box display="flex" justifyContent="center" mt={2}>
+        <Pagination
+          count={totalPages}
+          page={page}
+          onChange={(_, value) => setPage(value)}
+          color="primary"
+        />
+      </Box>
     </TableContainer>
   );
 };

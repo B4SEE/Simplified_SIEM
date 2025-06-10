@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { config } from '../config';
 
-const BASE_URL = 'http://localhost:5001/api/auth';
+const BASE_URL = config.AUTH_API_URL;
 
 // Public endpoints - no auth required
 export const checkAuthStatus = async () => {

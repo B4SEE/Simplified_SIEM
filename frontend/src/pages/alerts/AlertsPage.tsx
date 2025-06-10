@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Table, TableBody, TableCell, TableHead, TableRow, Paper
+  Table, TableBody, TableCell, TableHead, TableRow, Paper,
+  CircularProgress, Typography, Box, Alert, Snackbar
 } from '@mui/material';
 import {
   StyledButton,
@@ -13,7 +14,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { getAlarms, getAlarmById } from '../../api/alarms';
 import { toggleAlarmStatus, deleteAlarm } from '../../api/alarms';
 
-
 interface Alarm {
   id: number;
   timestamp: string;
@@ -22,62 +22,88 @@ interface Alarm {
   resolved: boolean;
 }
 
+interface SnackbarState {
+  open: boolean;
+  message: string;
+  severity: 'success' | 'error' | 'info' | 'warning';
+}
+
 const AlertsPage: React.FC = () => {
   const [alerts, setAlerts] = useState<Alarm[]>([]);
-  const { token, userId} = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState<SnackbarState>({
+    open: false,
+    message: '',
+    severity: 'info'
+  });
+  const { token, userId } = useAuth();
+
+  const showSnackbar = (message: string, severity: SnackbarState['severity']) => {
+    setSnackbar({
+      open: true,
+      message,
+      severity
+    });
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
+
+  const fetchAlarms = async () => {
+    if (!token || !userId) {
+      setError('Authentication required');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await getAlarms(token, userId);
+      console.log('Raw alarms data:', JSON.stringify(response.data, null, 2));
+
+      if (response.data.status === 'success') {
+        const formatted = response.data.alarms.map((alarm: any) => ({
+          id: alarm.id,
+          timestamp: alarm.created_at,
+          description: alarm.description,
+          severity: alarm.severity,
+          resolved: !alarm.is_active,
+        }));
+        
+        console.log('Final formatted alarms:', formatted);
+        setAlerts(formatted);
+        setError(null);
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch alarms:', error);
+      setError('Failed to load alarms. Please try again later.');
+      showSnackbar('Failed to load alarms', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchAlarms = async () => {
-      if (!token || !userId) return;
-
-      try {
-        const response = await getAlarms(token, userId);
-        console.log('Raw alarms data:', JSON.stringify(response.data, null, 2));
-
-        if (response.data.status === 'success') {
-          const formatted = response.data.alarms.map((alarm: any) => {
-            // Log the raw alarm data
-            console.log('Raw alarm data:', {
-              id: alarm.id,
-              is_active: alarm.is_active,
-              description: alarm.description,
-              created_at: alarm.created_at,
-              severity: alarm.severity
-            });
-            
-            return {
-              id: alarm.id,
-              timestamp: alarm.created_at,
-              description: alarm.description,
-              severity: alarm.severity,
-              resolved: !alarm.is_active,
-            };
-          });
-          
-          console.log('Final formatted alarms:', formatted);
-          setAlerts(formatted);
-        } else {
-          console.error('❌ Failed to fetch alarms: Invalid response format');
-        }
-      } catch (error) {
-        console.error('❌ Failed to fetch alarms:', error);
-      }
-    };
-
     fetchAlarms();
+    const interval = setInterval(fetchAlarms, 30000); // Refresh every 30 seconds
+    return () => clearInterval(interval);
   }, [token, userId]);
 
   const toggleResolved = async (id: number, currentStatus: boolean) => {
     try {
       if (!token || !userId) {
-        console.error('❌ Missing token or userId');
+        showSnackbar('Authentication required', 'error');
         return;
       }
 
       // Find the current alarm to verify its state
       const currentAlarm = alerts.find(a => a.id === id);
       if (!currentAlarm) {
-        console.error('❌ Alarm not found:', id);
+        showSnackbar('Alarm not found', 'error');
         return;
       }
 
@@ -90,116 +116,120 @@ const AlertsPage: React.FC = () => {
       }
 
       const currentServerState = currentResponse.data.alarm;
-      console.log('Current alarm states:', {
-        id,
-        frontendState: {
-          resolved: currentAlarm.resolved,
-          is_active: !currentAlarm.resolved
-        },
-        serverState: {
-          is_active: currentServerState.is_active
-        }
-      });
-
-      // Toggling the current server state
       const newIsActive = !currentServerState.is_active;
       
       console.log('Starting toggle for alarm:', { 
         id, 
         currentServerState: currentServerState.is_active,
-        newIsActive,
-        currentState: currentServerState.is_active ? 'active' : 'inactive'
+        newIsActive
       });
+
+      // Optimistically update UI
+      setAlerts(prevAlerts => 
+        prevAlerts.map(alert =>
+          alert.id === id ? { ...alert, resolved: !alert.resolved } : alert
+        )
+      );
 
       const response = await toggleAlarmStatus(id, token, newIsActive, userId);
       console.log('Full toggle response:', response.data);
 
       if (response.data.status === 'success' && response.data.alarm) {
         const serverIsActive = response.data.alarm.is_active;
-        console.log('✅ New server state:', { 
-          serverIsActive,
-          shouldBeResolved: !serverIsActive 
-        });
-
-        // Update UI with the server response
-        setAlerts((prevAlerts) => {
-          const updatedAlerts = prevAlerts.map((alert) =>
-            alert.id === id 
-              ? { 
-                  ...alert, 
-                  resolved: !serverIsActive,
-                  timestamp: response.data.alarm.created_at
-                } 
-              : alert
-          );
-          console.log('Updated alerts state:', updatedAlerts);
-          return updatedAlerts;
-        });
-
-        // Fetch fresh data to ensure UI is in sync
-        const freshResponse = await getAlarms(token, userId);
-        if (freshResponse.data.status === 'success') {
-          const formatted = freshResponse.data.alarms.map((alarm: any) => ({
-            id: alarm.id,
-            timestamp: alarm.created_at,
-            description: alarm.description,
-            severity: alarm.severity,
-            resolved: !alarm.is_active,
-          }));
-          console.log('Setting fresh alerts data:', formatted);
-          setAlerts(formatted);
-        }
+        showSnackbar(
+          `Alarm ${serverIsActive ? 'activated' : 'resolved'} successfully`,
+          'success'
+        );
+        await fetchAlarms(); // Refresh data
       } else {
-        console.error('❌ Invalid response format:', response.data);
         throw new Error(response.data.message || 'Invalid response format');
       }
     } catch (error) {
       console.error('❌ Failed to toggle alarm:', error);
+      showSnackbar('Failed to update alarm status', 'error');
+      await fetchAlarms(); // Refresh to revert optimistic update
     }
   };
-  
+
+  if (loading && alerts.length === 0) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error && alerts.length === 0) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="400px">
+        <Typography color="error">{error}</Typography>
+      </Box>
+    );
+  }
 
   return (
-    <StyledTableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Timestamp</TableCell>
-            <TableCell>Description</TableCell>
-            <TableCell>Severity</TableCell>
-            <TableCell>Resolved</TableCell>
-            <TableCell>Action</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {alerts.map((alert) => (
-            <TableRow key={alert.id}>
-              <TableCell>{alert.timestamp}</TableCell>
-              <TableCell>{alert.description}</TableCell>
-              <StyledSeverityCell severity={alert.severity}>
-                {alert.severity}
-              </StyledSeverityCell>
-              <TableCell>{alert.resolved ? '✅ Yes' : '❌ No'}</TableCell>
-              <TableCell>
-              <StyledIconButton
-              onClick={() => toggleResolved(alert.id, alert.resolved)}
-              color={alert.resolved ? 'warning' : 'success'}
-              >
-                {alert.resolved ? <Undo /> : <CheckCircle />}
-              </StyledIconButton>
-              <StyledButton
-              variant="contained"
-              color={alert.resolved ? 'warning' : 'success'}
-              onClick={() => toggleResolved(alert.id, alert.resolved)}
-              >
-                {alert.resolved ? 'MARK UNRESOLVED' : 'RESOLVE'}
-              </StyledButton>
-              </TableCell>
+    <>
+      <StyledTableContainer component={Paper}>
+        {loading && (
+          <Box display="flex" justifyContent="center" p={1}>
+            <CircularProgress size={20} />
+          </Box>
+        )}
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Timestamp</TableCell>
+              <TableCell>Description</TableCell>
+              <TableCell>Severity</TableCell>
+              <TableCell>Resolved</TableCell>
+              <TableCell>Action</TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </StyledTableContainer>
+          </TableHead>
+          <TableBody>
+            {alerts.map((alert) => (
+              <TableRow key={alert.id}>
+                <TableCell>{new Date(alert.timestamp).toLocaleString()}</TableCell>
+                <TableCell>{alert.description}</TableCell>
+                <StyledSeverityCell severity={alert.severity}>
+                  {alert.severity.toUpperCase()}
+                </StyledSeverityCell>
+                <TableCell>{alert.resolved ? '✅ Yes' : '❌ No'}</TableCell>
+                <TableCell>
+                  <StyledIconButton
+                    onClick={() => toggleResolved(alert.id, alert.resolved)}
+                    color={alert.resolved ? 'warning' : 'success'}
+                  >
+                    {alert.resolved ? <Undo /> : <CheckCircle />}
+                  </StyledIconButton>
+                  <StyledButton
+                    variant="contained"
+                    color={alert.resolved ? 'warning' : 'success'}
+                    onClick={() => toggleResolved(alert.id, alert.resolved)}
+                  >
+                    {alert.resolved ? 'MARK UNRESOLVED' : 'RESOLVE'}
+                  </StyledButton>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </StyledTableContainer>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbar.severity}
+          variant="filled"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </>
   );
 };
 

@@ -1,8 +1,9 @@
 import os
 import sys
 import json
-from confluent_kafka import Producer
-from confluent_kafka.admin import AdminClient, NewTopic
+from kafka import KafkaProducer
+from kafka.admin import KafkaAdminClient, NewTopic
+from kafka.errors import TopicAlreadyExistsError
 
 class KafkaProducerSingleton:
     __instance = None
@@ -23,51 +24,45 @@ class KafkaProducerSingleton:
         if not kafka_broker:
             raise EnvironmentError("KAFKA_BROKER environment variable is not set")
 
-        # Kafka configuration
-        conf = {'bootstrap.servers': kafka_broker}
-
         # Create an admin client
-        admin_client = AdminClient({'bootstrap.servers': kafka_broker})
+        try:
+            admin_client = KafkaAdminClient(bootstrap_servers=kafka_broker)
 
-        # Define the topic
-        topic_name = 'logs'
-        num_partitions = 1
-        replication_factor = 1
+            # Define the topic
+            topic_name = 'logs'
+            num_partitions = 1
+            replication_factor = 1
 
-        # Check if the topic already exists
-        existing_topics = admin_client.list_topics().topics
-        print(f'Existing topics: {existing_topics}', file=sys.stderr)
-        if topic_name not in existing_topics:
-            # Create the topic
-            topic_list = [NewTopic(topic=topic_name, num_partitions=num_partitions, replication_factor=replication_factor)]
-            admin_client.create_topics(new_topics=topic_list, validate_only=False)
-            print(f'Topic "{topic_name}" was created', file=sys.stderr)
-        else:
-            print(f'Topic "{topic_name}" already exists, skip', file=sys.stderr)
+            # Create the topic if it doesn't exist
+            try:
+                topic_list = [NewTopic(name=topic_name, num_partitions=num_partitions, replication_factor=replication_factor)]
+                admin_client.create_topics(new_topics=topic_list)
+                print(f'Topic "{topic_name}" was created', file=sys.stderr)
+            except TopicAlreadyExistsError:
+                print(f'Topic "{topic_name}" already exists, skip', file=sys.stderr)
+            except Exception as e:
+                print(f'Error creating topic: {e}', file=sys.stderr)
+            finally:
+                admin_client.close()
+        except Exception as e:
+            print(f'Error with admin client: {e}', file=sys.stderr)
 
         # Create a Kafka producer instance
-        self.__producer = Producer(conf)
+        self.__producer = KafkaProducer(
+            bootstrap_servers=kafka_broker,
+            value_serializer=lambda v: json.dumps(v).encode('utf-8')
+        )
         print("Kafka producer initialized", file=sys.stderr)
-
-    def __produce(self, topic, value, callback):
-        self.__producer.produce(topic, value=value, callback=callback)
-        self.__producer.flush()
-
 
     def produce_log(self, log_data):
         """ Function to produce logs to the 'logs' topic """
         try:
-            self.__produce('logs', value=json.dumps(log_data), callback=delivery_report)
+            future = self.__producer.send('logs', value=log_data)
+            # Wait for the message to be delivered
+            record_metadata = future.get(timeout=10)
+            print(f'Message delivered to partition {record_metadata.partition} at offset {record_metadata.offset}', file=sys.stderr)
             print('produce data: ' + json.dumps(log_data), file=sys.stderr)
             return True
         except Exception as e:
             print(f'Failed to produce log: {e}', file=sys.stderr)
             return False
-
-def delivery_report(err, msg):
-    """ Called once for each message produced to indicate delivery result.
-        Triggered by poll() or flush(). """
-    if err is not None:
-        print(f'Delivery failed for message: {err}', file=sys.stderr)
-    else:
-        print(f'Message delivered to {msg.topic()} [{msg.partition()}]', file=sys.stderr)
