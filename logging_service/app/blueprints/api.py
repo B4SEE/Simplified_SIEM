@@ -1,6 +1,10 @@
 from flask import Blueprint, request, jsonify
 from ..log_ingester import KafkaProducerSingleton
 from ..log_processor import LogProcessorSingleton
+from ..models import db
+from ..models.log_entry import LogEntry
+from datetime import datetime, timedelta
+from sqlalchemy import desc, func, case
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -16,6 +20,107 @@ def receive_logs():
     else:
         message = "Failed to produce logs"
     return jsonify({"message": message}), 200
+
+@api_bp.route('/logs/search', methods=['GET'])
+def search_logs():
+    try:
+        # Get query parameters with defaults
+        start_date = request.args.get('startDate')
+        end_date = request.args.get('endDate')
+        event_type = request.args.get('eventType')
+        user_id = request.args.get('userId')
+        severity = request.args.get('severity')
+        limit = min(int(request.args.get('limit', 100)), 1000)  # Cap at 1000
+        offset = int(request.args.get('offset', 0))
+
+        # Build query
+        query = LogEntry.query
+
+        # Apply filters
+        if start_date:
+            query = query.filter(LogEntry.timestamp >= datetime.fromisoformat(start_date.replace('Z', '+00:00')))
+        if end_date:
+            query = query.filter(LogEntry.timestamp <= datetime.fromisoformat(end_date.replace('Z', '+00:00')))
+        if event_type:
+            query = query.filter(LogEntry.event_type == event_type)
+        if user_id:
+            query = query.filter(LogEntry.user_id == int(user_id))
+        if severity:
+            query = query.filter(LogEntry.severity == severity)
+
+        # Get total count
+        total = query.count()
+
+        # Get paginated results
+        logs = query.order_by(desc(LogEntry.timestamp)).offset(offset).limit(limit).all()
+
+        # Convert to dictionary
+        logs_data = [{
+            'id': log.id,
+            'timestamp': log.timestamp.isoformat(),
+            'user_ID': log.user_id,
+            'event_type': log.event_type,
+            'ip_address': log.ip_address,
+            'severity': log.severity or 'low',
+            'geo': [float(log.latitude), float(log.longitude)] if log.latitude and log.longitude else None,
+            'user_agent': log.user_agent,
+            'additional_data': log.additional_data
+        } for log in logs]
+
+        return jsonify({
+            'logs': logs_data,
+            'total': total,
+            'offset': offset,
+            'limit': limit
+        })
+
+    except Exception as e:
+        print(f"Error in search_logs: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@api_bp.route('/logs/stats', methods=['GET'])
+def get_log_stats():
+    try:
+        # Get time range
+        end_date = datetime.utcnow()
+        start_date = end_date - timedelta(days=7)  # Default to last 7 days
+
+        # Get query parameters
+        start_date_param = request.args.get('startDate')
+        end_date_param = request.args.get('endDate')
+
+        if start_date_param:
+            start_date = datetime.fromisoformat(start_date_param.replace('Z', '+00:00'))
+        if end_date_param:
+            end_date = datetime.fromisoformat(end_date_param.replace('Z', '+00:00'))
+
+        # Query for stats
+        stats = db.session.query(
+            func.count().label('total'),
+            func.sum(case((LogEntry.event_type == 'login_success', 1), else_=0)).label('successful_logins'),
+            func.sum(case((LogEntry.event_type == 'login_failed', 1), else_=0)).label('failed_logins'),
+            func.sum(case((LogEntry.severity == 'high', 1), else_=0)).label('alerts')
+        ).filter(
+            LogEntry.timestamp.between(start_date, end_date)
+        ).first()
+
+        # Get last login
+        last_login = LogEntry.query.filter(
+            LogEntry.event_type == 'login_success',
+            LogEntry.timestamp.between(start_date, end_date)
+        ).order_by(desc(LogEntry.timestamp)).first()
+
+        return jsonify({
+            'totalLogs': stats.total or 0,
+            'successfulLogins': stats.successful_logins or 0,
+            'failedLogins': stats.failed_logins or 0,
+            'alertsCount': stats.alerts or 0,
+            'lastLogin': last_login.timestamp.isoformat() if last_login else None
+        })
+
+    except Exception as e:
+        print(f"Error in get_log_stats: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @api_bp.route('/process_logs', methods=['POST'])
 def process_logs_endpoint():
