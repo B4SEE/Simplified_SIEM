@@ -3,6 +3,14 @@ import { config } from '../config';
 
 const BASE_URL = config.LOGGING_API_URL;
 
+// Create axios instance with default config
+const api = axios.create({
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  }
+});
+
 export interface LogEntry {
   timestamp: string;
   ip_address: string;
@@ -17,11 +25,7 @@ export interface LogEntry {
 // Note: These endpoints are internal service endpoints and don't require auth
 export const sendLog = async (logData: LogEntry) => {
   try {
-    const response = await axios.post(`${BASE_URL}/logs`, logData, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await api.post(`${BASE_URL}/logs`, logData);
     return response.data;
   } catch (error: any) {
     console.error('Failed to send log:', error);
@@ -31,11 +35,7 @@ export const sendLog = async (logData: LogEntry) => {
 
 export const processLogs = async () => {
   try {
-    const response = await axios.post(`${BASE_URL}/process_logs`, null, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await api.post(`${BASE_URL}/process_logs`, null);
     return response.data;
   } catch (error: any) {
     console.error('Failed to process logs:', error);
@@ -53,11 +53,8 @@ export const searchLogs = async (query: {
   offset?: number;
 }) => {
   try {
-    const response = await axios.get(`${BASE_URL}/logs/search`, {
-      params: query,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    const response = await api.get(`${BASE_URL}/logs/search`, {
+      params: query
     });
     return response.data;
   } catch (error: any) {
@@ -68,11 +65,8 @@ export const searchLogs = async (query: {
 
 export const getLogStats = async (startDate?: string, endDate?: string) => {
   try {
-    const response = await axios.get(`${BASE_URL}/logs/stats`, {
-      params: { startDate, endDate },
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    const response = await api.get(`${BASE_URL}/logs/stats`, {
+      params: { startDate, endDate }
     });
     return response.data;
   } catch (error: any) {

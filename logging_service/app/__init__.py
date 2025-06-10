@@ -14,15 +14,25 @@ def create_app():
     app.config.from_object(Config)
     app.config['DEBUG'] = False  # Disable auto-reload
     app.config['USE_RELOADER'] = False  # Disable auto-reload
+    app.config['CORS_SUPPORTS_CREDENTIALS'] = True
 
     # Enable CORS for all routes
-    CORS(app, resources={
-        r"/api/*": {
-            "origins": ["http://localhost:3000"],
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization", "X-User-Id"]
-        }
-    })
+    CORS(app, 
+         origins=["http://localhost:3000"],
+         allow_credentials=True,
+         expose_headers=["Content-Type", "Authorization"],
+         supports_credentials=True,
+         resources={
+             r"/*": {
+                 "origins": ["http://localhost:3000"],
+                 "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                 "allow_headers": ["Content-Type", "Authorization", "X-User-Id"],
+                 "expose_headers": ["Content-Type", "Authorization"],
+                 "supports_credentials": True,
+                 "send_wildcard": False,
+                 "allow_credentials": True
+             }
+         })
 
     # Initialize extensions
     db.init_app(app)

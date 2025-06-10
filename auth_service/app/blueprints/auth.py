@@ -131,71 +131,89 @@ def login():
 
         return jsonify({'message': 'Invalid credentials', 'status': 'error'}), 401
 
-@auth_bp.route('/register', methods=['POST'])
+@auth_bp.route('/register', methods=['POST', 'OPTIONS'])
 def register():
     """Enhanced user registration with more comprehensive form"""
-    data = request.json
+    try:
+        if request.method == 'OPTIONS':
+            return '', 200
+            
+        if not request.is_json:
+            return jsonify({'message': 'Content-Type must be application/json', 'status': 'error'}), 400
+            
+        data = request.json
+        if not data:
+            return jsonify({'message': 'No data provided', 'status': 'error'}), 400
 
-    # Validate required fields
-    required_fields = ['username', 'email', 'password', 'confirm_password']
-    if not all(field in data for field in required_fields):
-        return jsonify({'message': 'Missing required fields', 'status': 'error'}), 400
+        # Validate required fields
+        required_fields = ['username', 'email', 'password', 'confirm_password']
+        if not all(field in data for field in required_fields):
+            return jsonify({'message': 'Missing required fields', 'status': 'error'}), 400
 
-    # Validate email format
-    email_pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-    if not re.match(email_pattern, data['email']):
-        return jsonify({'message': 'Invalid email format', 'status': 'error'}), 400
+        # Validate email format
+        email_pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+        if not re.match(email_pattern, data['email']):
+            return jsonify({'message': 'Invalid email format', 'status': 'error'}), 400
 
-    # Validate password strength
-    if len(data['password']) < 8:
-        return jsonify({'message': 'Password must be at least 8 characters', 'status': 'error'}), 400
+        # Validate password strength
+        if len(data['password']) < 8:
+            return jsonify({'message': 'Password must be at least 8 characters', 'status': 'error'}), 400
 
-    # Verify passwords match
-    if data['password'] != data['confirm_password']:
-        return jsonify({'message': 'Passwords do not match', 'status': 'error'}), 400
+        # Verify passwords match
+        if data['password'] != data['confirm_password']:
+            return jsonify({'message': 'Passwords do not match', 'status': 'error'}), 400
 
-    # Check if username or email already exists
-    if User.query.filter_by(username=data['username']).first():
-        return jsonify({'message': 'Username already exists', 'status': 'error'}), 400
+        # Check if username or email already exists
+        if User.query.filter_by(username=data['username']).first():
+            return jsonify({'message': 'Username already exists', 'status': 'error'}), 400
 
-    if User.query.filter_by(email=data['email']).first():
-        return jsonify({'message': 'Email already exists', 'status': 'error'}), 400
+        if User.query.filter_by(email=data['email']).first():
+            return jsonify({'message': 'Email already exists', 'status': 'error'}), 400
 
-    # Create new user
-    new_user = User(
-        username=data['username'],
-        email=data['email'],
-        first_name=data.get('first_name', ''),
-        last_name=data.get('last_name', ''),
-        # Add any additional fields you want to capture
-    )
-    new_user.password = data['password']  # This will use the password setter to hash
+        # Create new user
+        new_user = User(
+            username=data['username'],
+            email=data['email'],
+            first_name=data.get('first_name', ''),
+            last_name=data.get('last_name', '')
+        )
+        new_user.password = data['password']  # This will use the password setter to hash
 
-    # Save to database
-    db.session.add(new_user)
-    db.session.commit()
+        try:
+            # Save to database
+            db.session.add(new_user)
+            db.session.commit()
 
-    # Publish registration event to Kafka
-    producer = get_kafka_producer()
-    log_event = {
-        'timestamp': datetime.utcnow().isoformat(),
-        'ip_address': request.remote_addr,
-        'event_type': 'user_registered',
-        'user_ID': new_user.id,
-        'user_agent': request.headers.get('User-Agent', '')
-    }
-    producer.produce('logs', key=str(new_user.id), value=json.dumps(log_event))
-    producer.flush()
+            # Publish registration event to Kafka
+            try:
+                producer = get_kafka_producer()
+                log_event = {
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'ip_address': request.remote_addr,
+                    'event_type': 'user_registered',
+                    'user_ID': new_user.id,
+                    'user_agent': request.headers.get('User-Agent', '')
+                }
+                producer.produce('logs', key=str(new_user.id), value=json.dumps(log_event))
+                producer.flush()
+            except Exception as e:
+                current_app.logger.error(f"Failed to publish to Kafka: {str(e)}")
+                # Don't fail registration if Kafka fails
 
-    # In a real implementation, you would send an email verification here
-    # For now, we'll just log that it would happen
-    current_app.logger.info(f"Would send verification email to {new_user.email}")
+            return jsonify({
+                'message': 'Registration successful',
+                'status': 'success',
+                'user_id': new_user.id
+            }), 201
 
-    return jsonify({
-        'message': 'Registration successful. Please check your email to verify your account.',
-        'status': 'success',
-        'user_id': new_user.id
-    }), 201
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Database error during registration: {str(e)}")
+            return jsonify({'message': 'Registration failed', 'status': 'error'}), 500
+
+    except Exception as e:
+        current_app.logger.error(f"Error during registration: {str(e)}")
+        return jsonify({'message': 'Registration failed', 'status': 'error'}), 500
 
 @auth_bp.route('/profile', methods=['GET'])
 @token_required

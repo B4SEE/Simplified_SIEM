@@ -3,16 +3,51 @@ import { config } from '../config';
 
 const BASE_URL = config.AUTH_API_URL;
 
+// Create axios instance with default config
+const api = axios.create({
+  baseURL: BASE_URL,
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+// Add request interceptor to handle CORS
+api.interceptors.request.use(
+  config => {
+    config.withCredentials = true;
+    return config;
+  },
+  error => {
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor to handle errors
+api.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response) {
+      console.error('Response error:', error.response.data);
+    } else if (error.request) {
+      console.error('Request error:', error.request);
+    } else {
+      console.error('Error:', error.message);
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Public endpoints - no auth required
 export const checkAuthStatus = async () => {
-  return axios.get(`${BASE_URL}/status`);
+  return api.get('/status');
 };
 
 export const login = async (credentials: {
   username: string;
   password: string;
 }) => {
-  const response = await axios.post(`${BASE_URL}/login`, credentials);
+  const response = await api.post('/login', credentials);
   return response.data;
 };
 
@@ -25,7 +60,7 @@ export const register = async (data: {
   last_name?: string;
 }) => {
   try {
-    const response = await axios.post(`${BASE_URL}/register`, data);
+    const response = await api.post('/register', data);
     return response.data;
   } catch (error: any) {
     const message =
@@ -36,7 +71,7 @@ export const register = async (data: {
 
 // Protected endpoints - require auth
 export const getProfile = async (token: string, userId: number) => {
-  return axios.get(`${BASE_URL}/profile`, {
+  return api.get('/profile', {
     headers: {
       Authorization: `Bearer ${token}`,
       'X-User-Id': String(userId),
@@ -54,11 +89,10 @@ export const updateProfile = async (
     last_name: string;
   }
 ) => {
-  return axios.put(`${BASE_URL}/profile`, profileData, {
+  return api.put('/profile', profileData, {
     headers: {
       Authorization: `Bearer ${token}`,
       'X-User-Id': String(userId),
-      'Content-Type': 'application/json',
     },
   });
 };
@@ -72,17 +106,16 @@ export const changePassword = async (
     confirm_password: string;
   }
 ) => {
-  return axios.put(`${BASE_URL}/password`, data, {
+  return api.put('/password', data, {
     headers: {
       Authorization: `Bearer ${token}`,
       'X-User-Id': String(userId),
-      'Content-Type': 'application/json',
     },
   });
 };
 
 export const verifyEmail = async (token: string, userId: number) => {
-  return axios.get(`${BASE_URL}/verify-email`, {
+  return api.get('/verify-email', {
     headers: {
       Authorization: `Bearer ${token}`,
       'X-User-Id': String(userId),

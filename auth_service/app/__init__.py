@@ -1,10 +1,44 @@
-from flask import Flask
+from flask import Flask, request, make_response, jsonify
 from flask_cors import CORS
 from .models import db
 
 def create_app(config_name='default'):
     app = Flask(__name__)
-    CORS(app, origins=["http://localhost:3000"])
+    
+    # Configure CORS
+    CORS(app, 
+         resources={
+             r"/*": {
+                 "origins": ["http://localhost:3000"],
+                 "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                 "allow_headers": ["Content-Type", "Authorization", "X-User-Id"],
+                 "expose_headers": ["Content-Type", "Authorization"],
+                 "supports_credentials": True,
+                 "max_age": 3600
+             }
+         })
+
+    @app.after_request
+    def after_request(response):
+        origin = request.headers.get('Origin')
+        if origin == 'http://localhost:3000':
+            response.headers['Access-Control-Allow-Origin'] = origin
+            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-User-Id'
+            response.headers['Access-Control-Allow-Credentials'] = 'true'
+            response.headers['Access-Control-Max-Age'] = '3600'
+        return response
+
+    @app.errorhandler(500)
+    def handle_500(error):
+        response = make_response(jsonify({'message': 'Internal server error', 'status': 'error'}), 500)
+        origin = request.headers.get('Origin')
+        if origin == 'http://localhost:3000':
+            response.headers['Access-Control-Allow-Origin'] = origin
+            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-User-Id'
+            response.headers['Access-Control-Allow-Credentials'] = 'true'
+        return response
 
     # Load configuration
     from .config import Config
