@@ -1,5 +1,6 @@
 from . import db, BaseModel
 from werkzeug.security import generate_password_hash, check_password_hash
+from .login_log import LoginLog
 import uuid
 from datetime import datetime, timedelta
 
@@ -11,7 +12,7 @@ class User(db.Model, BaseModel):
     uuid = db.Column(db.String(36), unique=True, default=lambda: str(uuid.uuid4()), nullable=False)
     username = db.Column(db.String(64), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(256))
+    password_hash = db.Column(db.String(512))
     first_name = db.Column(db.String(64))
     last_name = db.Column(db.String(64))
     is_active = db.Column(db.Boolean, default=True, nullable=False)
@@ -56,28 +57,34 @@ class User(db.Model, BaseModel):
 
     def record_login_attempt(self, success, ip_address, user_agent):
         """Record a login attempt and update user status accordingly."""
-        if success:
-            # Reset failed attempts on successful login
-            self.failed_login_attempts = 0
-            self.account_locked = False
-        else:
-            # Increment failed attempts
-            self.failed_login_attempts += 1
-            self.last_failed_login = datetime.utcnow()
+        try:
+            if success:
+                # Reset failed attempts on successful login
+                self.failed_login_attempts = 0
+                self.account_locked = False
+                self.last_login_at = datetime.utcnow()
+            else:
+                # Increment failed attempts
+                self.failed_login_attempts += 1
+                self.last_failed_login = datetime.utcnow()
 
-            # Lock account after 5 failed attempts
-            if self.failed_login_attempts >= 5:
-                self.account_locked = True
+                # Lock account after 5 failed attempts
+                if self.failed_login_attempts >= 5:
+                    self.account_locked = True
 
-        # Create login log entry
-        log_entry = LoginLog(
-            user_id=self.id,
-            success=success,
-            ip_address=ip_address,
-            user_agent=user_agent,
-            timestamp=datetime.utcnow()
-        )
-        db.session.add(log_entry)
+            # Create login log entry
+            log_entry = LoginLog(
+                user=self,
+                success=success,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                timestamp=datetime.utcnow()
+            )
+            db.session.add(log_entry)
+            return True
+        except Exception as e:
+            db.session.rollback()
+            raise e
 
     def is_locked(self):
         """Check if the account is locked."""

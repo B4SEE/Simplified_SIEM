@@ -15,10 +15,14 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
 # Setup Kafka producer
 def get_kafka_producer():
-    conf = {
-        'bootstrap.servers': current_app.config['KAFKA_BROKER'],
-    }
-    return Producer(conf)
+    try:
+        conf = {
+            'bootstrap.servers': current_app.config['KAFKA_BROKER'],
+        }
+        return Producer(conf)
+    except Exception as e:
+        current_app.logger.error(f"Failed to create Kafka producer: {str(e)}")
+        return None
 
 # Authentication middleware
 def token_required(f):
@@ -69,67 +73,96 @@ def status():
         'service': 'auth'
     })
 
-@auth_bp.route('/login', methods=['POST'])
+@auth_bp.route('/login', methods=['POST', 'OPTIONS'])
 def login():
     """Handle user login requests"""
-    data = request.json
+    try:
+        if request.method == 'OPTIONS':
+            return '', 200
 
-    if not data or not data.get('username') or not data.get('password'):
-        return jsonify({'message': 'Missing username or password', 'status': 'error'}), 400
+        if not request.is_json:
+            return jsonify({'message': 'Content-Type must be application/json', 'status': 'error'}), 400
 
-    user = User.query.filter_by(username=data['username']).first()
+        data = request.json
+        if not data:
+            return jsonify({'message': 'No data provided', 'status': 'error'}), 400
 
-    # Get IP address from request
-    ip_address = request.remote_addr
-    user_agent = request.headers.get('User-Agent', '')
+        if not data.get('username') or not data.get('password'):
+            return jsonify({'message': 'Missing username or password', 'status': 'error'}), 400
 
-    # Authentication success or failure
-    if user and user.verify_password(data['password']) and not user.is_locked():
-        # Record successful login
-        user.record_login_attempt(True, ip_address, user_agent)
+        user = User.query.filter_by(username=data['username']).first()
 
-        # Generate auth token (simplified for example)
-        token = str(uuid.uuid4())
+        # Get IP address from request
+        ip_address = request.remote_addr or '0.0.0.0'
+        user_agent = request.headers.get('User-Agent', '')
 
-        # Publish login event to Kafka
-        producer = get_kafka_producer()
-        log_event = {
-            'timestamp': datetime.utcnow().isoformat(),
-            'ip_address': ip_address,
-            'event_type': 'login_success',
-            'user_ID': user.id,
-            'user_agent': user_agent
-        }
-        producer.produce('logs', key=str(user.id), value=json.dumps(log_event))
-        producer.flush()
+        # Authentication success or failure
+        if user and user.verify_password(data['password']) and not user.is_locked():
+            try:
+                # Record successful login
+                user.record_login_attempt(True, ip_address, user_agent)
 
-        db.session.commit()
-        return jsonify({
-            'message': 'Login successful',
-            'status': 'success',
-            'token': token,
-            'user_id': user.id
-        })
-    else:
-        # Record failed login
-        if user:
-            user.record_login_attempt(False, ip_address, user_agent)
-            db.session.commit()
+                # Generate auth token (simplified for example)
+                token = str(uuid.uuid4())
 
-        # Publish failed login event to Kafka
-        producer = get_kafka_producer()
-        log_event = {
-            'timestamp': datetime.utcnow().isoformat(),
-            'ip_address': ip_address,
-            'event_type': 'login_failed',
-            'user_ID': user.id if user else None,
-            'user_agent': user_agent
-        }
-        producer.produce('logs', value=json.dumps(log_event))
-        producer.flush()
-        print('📣 [AUTH SERVICE] Produced login_failed event to Kafka', flush=True)
+                # Try to publish to Kafka, but don't fail if it doesn't work
+                try:
+                    producer = get_kafka_producer()
+                    if producer:
+                        log_event = {
+                            'timestamp': datetime.utcnow().isoformat(),
+                            'ip_address': ip_address,
+                            'event_type': 'login_success',
+                            'user_ID': user.id,
+                            'user_agent': user_agent
+                        }
+                        producer.produce('logs', key=str(user.id), value=json.dumps(log_event))
+                        producer.flush()
+                except Exception as e:
+                    current_app.logger.error(f"Failed to publish to Kafka: {str(e)}")
 
-        return jsonify({'message': 'Invalid credentials', 'status': 'error'}), 401
+                db.session.commit()
+                return jsonify({
+                    'message': 'Login successful',
+                    'status': 'success',
+                    'token': token,
+                    'user_id': user.id
+                })
+            except Exception as e:
+                db.session.rollback()
+                current_app.logger.error(f"Database error during login: {str(e)}")
+                return jsonify({'message': 'Login failed', 'status': 'error'}), 500
+        else:
+            # Record failed login
+            if user:
+                try:
+                    user.record_login_attempt(False, ip_address, user_agent)
+                    db.session.commit()
+                except Exception as e:
+                    current_app.logger.error(f"Failed to record login attempt: {str(e)}")
+                    db.session.rollback()
+
+            # Try to publish failed login event to Kafka
+            try:
+                producer = get_kafka_producer()
+                if producer:
+                    log_event = {
+                        'timestamp': datetime.utcnow().isoformat(),
+                        'ip_address': ip_address,
+                        'event_type': 'login_failed',
+                        'user_ID': user.id if user else None,
+                        'user_agent': user_agent
+                    }
+                    producer.produce('logs', value=json.dumps(log_event))
+                    producer.flush()
+            except Exception as e:
+                current_app.logger.error(f"Failed to publish to Kafka: {str(e)}")
+
+            return jsonify({'message': 'Invalid credentials', 'status': 'error'}), 401
+
+    except Exception as e:
+        current_app.logger.error(f"Unexpected error during login: {str(e)}")
+        return jsonify({'message': 'Login failed', 'status': 'error'}), 500
 
 @auth_bp.route('/register', methods=['POST', 'OPTIONS'])
 def register():

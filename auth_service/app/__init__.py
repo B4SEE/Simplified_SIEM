@@ -20,6 +20,10 @@ def create_app(config_name='default'):
 
     @app.after_request
     def after_request(response):
+        if request.method == 'OPTIONS':
+            response = make_response()
+            response.status_code = 200
+        
         origin = request.headers.get('Origin')
         if origin == 'http://localhost:3000':
             response.headers['Access-Control-Allow-Origin'] = origin
@@ -38,6 +42,7 @@ def create_app(config_name='default'):
             response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
             response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-User-Id'
             response.headers['Access-Control-Allow-Credentials'] = 'true'
+            response.headers['Access-Control-Max-Age'] = '3600'
         return response
 
     # Load configuration

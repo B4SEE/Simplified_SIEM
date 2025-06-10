@@ -15,10 +15,11 @@ class LoginLog(db.Model, BaseModel):
     # Relationship
     user = db.relationship('User', back_populates='login_logs')
 
-    def __init__(self, user_id, success, ip_address, user_agent=None, timestamp=None):
-        self.user_id = user_id
+    def __init__(self, user=None, success=False, ip_address=None, user_agent=None, timestamp=None):
+        if user:
+            self.user_id = user.id
         self.success = success
-        self.ip_address = ip_address
+        self.ip_address = ip_address or '0.0.0.0'
         self.user_agent = user_agent
         self.timestamp = timestamp or datetime.utcnow()
 
@@ -35,4 +36,4 @@ class LoginLog(db.Model, BaseModel):
 
     def __repr__(self):
         status = "successful" if self.success else "failed"
-        return f'<LoginLog {status} for user_id={self.user_id} at {self.created_at}>'
+        return f'<LoginLog {status} for user_id={self.user_id} at {self.timestamp}>'
