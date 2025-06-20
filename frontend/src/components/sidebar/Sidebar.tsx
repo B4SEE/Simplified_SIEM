@@ -16,10 +16,14 @@ import {
 } from './StyledSidebar';
 import { NavLink } from 'react-router-dom';
 
+import SearchIcon from '@mui/icons-material/Search';
+import { useAuth } from '../../contexts/AuthContext';
+
 const Sidebar: React.FC<{
   mobileOpen: boolean;
   handleDrawerToggle: () => void;
 }> = ({ mobileOpen, handleDrawerToggle }) => {
+  const { isAdmin } = useAuth();
   const drawer = (
     <SidebarContainer>
       <Toolbar />
@@ -44,6 +48,15 @@ const Sidebar: React.FC<{
           </ListItemIcon>
           <ListItemText primary='Alerts' />
         </ListItemButton>
+
+        {isAdmin && (
+          <ListItemButton component={NavLink} to='/admin/advanced-logs'>
+            <ListItemIcon>
+              <SearchIcon />
+            </ListItemIcon>
+            <ListItemText primary='Advanced Logs' />
+          </ListItemButton>
+        )}
       </List>
     </SidebarContainer>
   );

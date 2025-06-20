@@ -1,4 +1,6 @@
 #!/bin/bash
+#echo "==== install requirements ===="
+#pip install -r requirements.txt
 echo "==== Starting services from start.sh ===="
 
 # Start Celery worker in the background

@@ -54,18 +54,25 @@ def search_logs():
         # Get paginated results
         logs = query.order_by(desc(LogEntry.timestamp)).offset(offset).limit(limit).all()
 
-        # Convert to dictionary
-        logs_data = [{
-            'id': log.id,
-            'timestamp': log.timestamp.isoformat(),
-            'user_ID': log.user_id,
-            'event_type': log.event_type,
-            'ip_address': log.ip_address,
-            'severity': log.severity or 'low',
-            'geo': [float(log.latitude), float(log.longitude)] if log.latitude and log.longitude else None,
-            'user_agent': log.user_agent,
-            'additional_data': log.additional_data
-        } for log in logs]
+        # Gather user IDs for role fetching
+        user_ids = list(set([log.user_id for log in logs if log.user_id is not None]))
+        roles_map = {}
+        if user_ids:
+            try:
+                from .user_roles_fetcher import fetch_user_roles
+                roles_map = fetch_user_roles(user_ids)
+            except Exception as e:
+                print(f"Failed to fetch user roles: {e}")
+
+        # Convert to dictionary and add roles
+        logs_data = []
+        for log in logs:
+            log_dict = {'id': log.id, 'timestamp': log.timestamp.isoformat(), 'user_ID': log.user_id,
+                        'event_type': log.event_type, 'ip_address': log.ip_address, 'severity': log.severity or 'low',
+                        'geo': [float(log.latitude), float(log.longitude)] if log.latitude and log.longitude else None,
+                        'user_agent': log.user_agent, 'additional_data': log.additional_data,
+                        'roles': roles_map.get(log.user_id, [])}
+            logs_data.append(log_dict)
 
         return jsonify({
             'logs': logs_data,

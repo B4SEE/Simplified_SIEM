@@ -1,6 +1,7 @@
 Flask==2.0.1
 Flask-SQLAlchemy==2.5.1
 Flask-CORS==4.0.0
+flask-cors>=3.0.10
 SQLAlchemy==1.4.23
 kafka-python==2.0.2
 elasticsearch==7.17.0

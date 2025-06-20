@@ -24,7 +24,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { isLoading, isLoggedIn, logout } = useAuth();
+  const { isLoading, isLoggedIn, logout, isAdmin } = useAuth();
 
   const navigate = useNavigate();
 
@@ -51,6 +51,26 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({
           <AppBarHeader variant='h5' noWrap>
             MoniLog
           </AppBarHeader>
+
+          {/* ADMIN badge, only for admin users */}
+          {isAdmin && (
+            <Box
+              sx={{
+                background: 'linear-gradient(90deg, #8e24aa 0%, #ce93d8 100%)',
+                color: 'white',
+                fontWeight: 600,
+                borderRadius: '16px',
+                px: 2,
+                py: 0.5,
+                fontSize: '1rem',
+                boxShadow: '0 1px 4px rgba(142, 36, 170, 0.12)',
+                letterSpacing: 1,
+                ml: 2
+              }}
+            >
+              ADMIN
+            </Box>
+          )}
 
           {!isLoading &&
             (isLoggedIn ? (
