@@ -103,12 +103,29 @@ export const getLogsGraphData = async (days: number = 7): Promise<LogsGraphData[
   }
 };
 
-export const getRecentLogs = async (limit: number = 10): Promise<LogEntry[]> => {
+export interface GetRecentLogsResult {
+  logs: LogEntry[];
+  total: number;
+}
+
+export const getRecentLogs = async (
+  limit: number = 10,
+  offset: number = 0,
+  eventType?: string,
+  severity?: string
+): Promise<GetRecentLogsResult> => {
   try {
-    const response = await searchLogs({ limit });
-    return response.logs || [];
+    const params: any = { limit, offset };
+    if (eventType && eventType !== 'all') params.eventType = eventType;
+    if (severity) params.severity = severity;
+
+    const response = await searchLogs(params);
+    return {
+      logs: response.logs || [],
+      total: response.total || 0,
+    };
   } catch (error) {
     console.error('Failed to get recent logs:', error);
     throw error;
   }
-}; 
+};

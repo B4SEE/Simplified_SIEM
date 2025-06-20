@@ -20,6 +20,7 @@ import {
 } from '@mui/material';
 import { getRecentLogs } from '../../services/logsService';
 import type { LogEntry } from '../../services/logsService';
+import type { GetRecentLogsResult } from '../../services/logsService';
 
 const LOGS_PER_PAGE = 10;
 
@@ -30,15 +31,32 @@ const LogsPage: React.FC = () => {
   const [filterAlerts, setFilterAlerts] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalLogs, setTotalLogs] = useState(0);
   const [eventTypeFilter, setEventTypeFilter] = useState<string>('all');
+  const [uniqueEventTypes, setUniqueEventTypes] = useState<string[]>([]);
 
   const fetchLogs = async () => {
     try {
       setLoading(true);
-      const response = await getRecentLogs(LOGS_PER_PAGE * page);
-      setLogs(response);
-      setTotalPages(Math.ceil(response.length / LOGS_PER_PAGE));
+      const severity = filterAlerts ? 'high' : undefined;
+      const offset = (page - 1) * LOGS_PER_PAGE;
+      const { logs, total }: GetRecentLogsResult = await getRecentLogs(
+        LOGS_PER_PAGE,
+        offset,
+        eventTypeFilter,
+        severity
+      );
+      setLogs(logs);
+      setTotalLogs(total);
+      setTotalPages(Math.max(1, Math.ceil(total / LOGS_PER_PAGE)));
       setError(null);
+
+      // Fetch all event types for filter dropdown (optional: cache this)
+      if (page === 1 && !filterAlerts && eventTypeFilter === 'all') {
+        // Fetch a larger sample to get event types
+        const allLogsResult = await getRecentLogs(100, 0);
+        setUniqueEventTypes(Array.from(new Set(allLogsResult.logs.map(l => l.event_type))));
+      }
     } catch (err) {
       console.error('Failed to fetch logs:', err);
       setError('Failed to load logs. Please try again later.');
@@ -49,22 +67,10 @@ const LogsPage: React.FC = () => {
 
   useEffect(() => {
     fetchLogs();
-    const interval = setInterval(fetchLogs, 5000); // Refresh every 5 seconds
-    return () => clearInterval(interval);
-  }, [page]);
-
-  const filteredLogs = logs.filter(log => {
-    const alertFilter = filterAlerts ? log.severity === 'high' : true;
-    const eventFilter = eventTypeFilter === 'all' ? true : log.event_type === eventTypeFilter;
-    return alertFilter && eventFilter;
-  });
-
-  const paginatedLogs = filteredLogs.slice(
-    (page - 1) * LOGS_PER_PAGE,
-    page * LOGS_PER_PAGE
-  );
-
-  const uniqueEventTypes = Array.from(new Set(logs.map(log => log.event_type)));
+    // Only refetch on page/filter change, not interval (optional)
+    // const interval = setInterval(fetchLogs, 5000);
+    // return () => clearInterval(interval);
+  }, [page, filterAlerts, eventTypeFilter]);
 
   if (loading && logs.length === 0) {
     return (
@@ -89,7 +95,7 @@ const LogsPage: React.FC = () => {
           control={
             <Switch
               checked={filterAlerts}
-              onChange={() => setFilterAlerts(!filterAlerts)}
+              onChange={() => { setPage(1); setFilterAlerts(!filterAlerts); }}
             />
           }
           label='Show Only High Severity'
@@ -98,7 +104,7 @@ const LogsPage: React.FC = () => {
           <InputLabel>Event Type</InputLabel>
           <Select
             value={eventTypeFilter}
-            onChange={(e) => setEventTypeFilter(e.target.value)}
+            onChange={(e) => { setPage(1); setEventTypeFilter(e.target.value); }}
             label="Event Type"
           >
             <MenuItem value="all">All Events</MenuItem>
@@ -120,7 +126,7 @@ const LogsPage: React.FC = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {paginatedLogs.map((log) => (
+          {logs.map((log) => (
             <TableRow key={log.id}>
               <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
               <TableCell>{log.user_ID}</TableCell>
