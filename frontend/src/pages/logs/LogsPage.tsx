@@ -31,22 +31,25 @@ const LogsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [filterAlerts, setFilterAlerts] = useState(false);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [eventTypeFilter, setEventTypeFilter] = useState('all');
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalLogs, setTotalLogs] = useState(0);
+  const [eventTypeFilter, setEventTypeFilter] = useState<string>('all');
   const [uniqueEventTypes, setUniqueEventTypes] = useState<string[]>([]);
 
   // Determine user role for API calls
   const userRole = roles.includes('admin') ? 'admin' : 'user';
 
   const fetchLogs = async () => {
+    if (!token) return;
+    
     try {
       setLoading(true);
       const offset = (page - 1) * LOGS_PER_PAGE;
       const severity = filterAlerts ? 'high' : undefined;
 
       const response = await getLogs(
-        token || undefined,
-        userId || undefined,
+        token,
+        userId,
         userRole,
         LOGS_PER_PAGE,
         offset,
@@ -55,12 +58,21 @@ const LogsPage: React.FC = () => {
       );
       
       setLogs(response.logs);
-      setTotalPages(Math.ceil(response.total / LOGS_PER_PAGE));
+      setTotalLogs(response.total);
+      setTotalPages(Math.max(1, Math.ceil(response.total / LOGS_PER_PAGE)));
 
-      // Only fetch all event types for the dropdown once, or when the filter is cleared
+      // Fetch unique event types for dropdown if not already loaded
       if (uniqueEventTypes.length === 0) {
-        const allLogsResponse = await getLogs(token || undefined, userId || undefined, userRole, 1000, 0);
-        setUniqueEventTypes(Array.from(new Set(allLogsResponse.logs.map((log: LogEntry) => log.event_type))) as string[]);
+        const allLogsResponse = await getLogs(
+          token,
+          userId,
+          userRole,
+          1000,
+          0
+        );
+        setUniqueEventTypes(
+          Array.from(new Set(allLogsResponse.logs.map((log: LogEntry) => log.event_type))) as string[]
+        );
       }
       
       setError(null);
@@ -76,19 +88,19 @@ const LogsPage: React.FC = () => {
     if (token) {
       fetchLogs();
     }
-  }, [page, token, eventTypeFilter, filterAlerts]); // Refetch when filters or page changes
+  }, [page, token, eventTypeFilter, filterAlerts, userId, userRole]);
 
   const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
     setPage(value);
   };
 
   const handleEventTypeChange = (e: SelectChangeEvent<string>) => {
-    setPage(1); // Reset to first page on new filter
+    setPage(1);
     setEventTypeFilter(e.target.value as string);
   };
 
   const handleSeverityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPage(1); // Reset to first page on new filter
+    setPage(1);
     setFilterAlerts(e.target.checked);
   };
 
@@ -167,7 +179,7 @@ const LogsPage: React.FC = () => {
                     fontWeight: 'bold',
                   }}
                 >
-                  {log.severity.toUpperCase()}
+                  {log.severity?.toUpperCase() || 'LOW'}
                 </TableCell>
               </TableRow>
             ))}

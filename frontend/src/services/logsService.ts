@@ -141,10 +141,17 @@ export const getLogs = async (
     if (severity) {
       query.severity = severity;
     }
+    
     const response = await searchLogs(query, token, userId, userRole);
     return response || { logs: [], total: 0, offset: 0, limit: 0 };
   } catch (error) {
     console.error('Failed to get logs:', error);
     throw error;
   }
-}; 
+};
+
+// Backward compatibility alias for pagination feature
+export const getRecentLogs = getLogs;
+
+// Type alias for backward compatibility
+export interface GetRecentLogsResult extends LogSearchResponse {}
