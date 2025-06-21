@@ -33,13 +33,24 @@ export interface LogSearchResponse {
   limit: number;
 }
 
-export const fetchLogStats = async (startDate?: string, endDate?: string): Promise<LogStats> => {
+export const fetchLogStats = async (
+  token?: string,
+  userId?: number,
+  userRole: string = 'user',
+  startDate?: string,
+  endDate?: string
+): Promise<LogStats> => {
   try {
-    const response = await searchLogs({
-      startDate,
-      endDate,
-      limit: 1000
-    });
+    const response = await searchLogs(
+      {
+        startDate,
+        endDate,
+        limit: 1000,
+      },
+      token,
+      userId,
+      userRole
+    );
 
     const logs: LogEntry[] = response.logs || [];
     const successfulLogins = logs.filter((log: LogEntry) => log.event_type === 'login_success').length;
@@ -62,17 +73,27 @@ export const fetchLogStats = async (startDate?: string, endDate?: string): Promi
   }
 };
 
-export const getLogsGraphData = async (days: number = 7): Promise<LogsGraphData[]> => {
+export const getLogsGraphData = async (
+  token?: string,
+  userId?: number,
+  userRole: string = 'user',
+  days: number = 7
+): Promise<LogsGraphData[]> => {
   try {
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    const response = await searchLogs({
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      limit: 1000
-    });
+    const response = await searchLogs(
+      {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        limit: 1000,
+      },
+      token,
+      userId,
+      userRole
+    );
 
     const logs = response.logs || [];
     const graphData: LogsGraphData[] = [];
@@ -103,9 +124,9 @@ export const getLogsGraphData = async (days: number = 7): Promise<LogsGraphData[
   }
 };
 
-export const getRecentLogs = async (limit: number = 10): Promise<LogEntry[]> => {
+export const getRecentLogs = async (limit: number = 10, token?: string, userId?: number, userRole: string = 'user'): Promise<LogEntry[]> => {
   try {
-    const response = await searchLogs({ limit });
+    const response = await searchLogs({ limit }, token, userId, userRole);
     return response.logs || [];
   } catch (error) {
     console.error('Failed to get recent logs:', error);

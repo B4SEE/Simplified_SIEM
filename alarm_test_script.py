@@ -22,7 +22,7 @@ import random
 import time
 import requests
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 import sys
 
 print('>>> Simplified alarm test script is running')
@@ -103,7 +103,7 @@ class AlarmTestScript:
             return False
     
     def create_login_log(self, event_type: str, ip_address: str, user_id: int = TEST_USER_ID, 
-                        geo: Tuple[float, float] = None, user_agent: str = None) -> Dict[str, Any]:
+                        geo: Optional[Tuple[float, float]] = None, user_agent: Optional[str] = None) -> Dict[str, Any]:
         """Create a login event log entry"""
         return {
             'timestamp': datetime.utcnow().isoformat(),

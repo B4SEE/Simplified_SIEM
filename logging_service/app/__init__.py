@@ -26,7 +26,7 @@ def create_app():
              r"/*": {
                  "origins": ["http://localhost:3000"],
                  "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-                 "allow_headers": ["Content-Type", "Authorization", "X-User-Id"],
+                 "allow_headers": ["Content-Type", "Authorization", "X-User-Id", "X-User-Role"],
                  "expose_headers": ["Content-Type", "Authorization"],
                  "supports_credentials": True,
                  "send_wildcard": False,

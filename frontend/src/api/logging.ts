@@ -43,18 +43,28 @@ export const processLogs = async () => {
   }
 };
 
-export const searchLogs = async (query: {
-  startDate?: string;
-  endDate?: string;
-  eventType?: string;
-  userId?: number;
-  severity?: string;
-  limit?: number;
-  offset?: number;
-}) => {
+export const searchLogs = async (
+  query: {
+    startDate?: string;
+    endDate?: string;
+    eventType?: string;
+    userId?: number;
+    severity?: string;
+    limit?: number;
+    offset?: number;
+  },
+  token?: string,
+  userId?: number,
+  userRole: string = 'user'
+) => {
   try {
     const response = await api.get(`${BASE_URL}/logs/search`, {
-      params: query
+      params: query,
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(userId ? { 'X-User-ID': userId } : {}),
+        'X-User-Role': userRole,
+      },
     });
     return response.data;
   } catch (error: any) {

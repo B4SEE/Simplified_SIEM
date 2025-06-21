@@ -20,10 +20,13 @@ import {
 } from '@mui/material';
 import { getRecentLogs } from '../../services/logsService';
 import type { LogEntry } from '../../services/logsService';
+import { useAuth } from '../../contexts/AuthContext';
+import type { SelectChangeEvent } from '@mui/material/Select';
 
 const LOGS_PER_PAGE = 10;
 
 const LogsPage: React.FC = () => {
+  const { token, userId } = useAuth();
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +38,7 @@ const LogsPage: React.FC = () => {
   const fetchLogs = async () => {
     try {
       setLoading(true);
-      const response = await getRecentLogs(LOGS_PER_PAGE * page);
+      const response = await getRecentLogs(LOGS_PER_PAGE * page, token || undefined, userId || undefined, 'user');
       setLogs(response);
       setTotalPages(Math.ceil(response.length / LOGS_PER_PAGE));
       setError(null);
@@ -53,7 +56,7 @@ const LogsPage: React.FC = () => {
     return () => clearInterval(interval);
   }, [page]);
 
-  const filteredLogs = logs.filter(log => {
+  const filteredLogs = logs.filter((log: LogEntry) => {
     const alertFilter = filterAlerts ? log.severity === 'high' : true;
     const eventFilter = eventTypeFilter === 'all' ? true : log.event_type === eventTypeFilter;
     return alertFilter && eventFilter;
@@ -64,7 +67,7 @@ const LogsPage: React.FC = () => {
     page * LOGS_PER_PAGE
   );
 
-  const uniqueEventTypes = Array.from(new Set(logs.map(log => log.event_type)));
+  const uniqueEventTypes = Array.from(new Set(logs.map((log: LogEntry) => log.event_type))) as string[];
 
   if (loading && logs.length === 0) {
     return (
@@ -98,11 +101,11 @@ const LogsPage: React.FC = () => {
           <InputLabel>Event Type</InputLabel>
           <Select
             value={eventTypeFilter}
-            onChange={(e) => setEventTypeFilter(e.target.value)}
+            onChange={(e: SelectChangeEvent) => setEventTypeFilter(e.target.value as string)}
             label="Event Type"
           >
             <MenuItem value="all">All Events</MenuItem>
-            {uniqueEventTypes.map(type => (
+            {uniqueEventTypes.map((type: string) => (
               <MenuItem key={type} value={type}>{type}</MenuItem>
             ))}
           </Select>
@@ -120,7 +123,7 @@ const LogsPage: React.FC = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {paginatedLogs.map((log) => (
+          {paginatedLogs.map((log: LogEntry) => (
             <TableRow key={log.id}>
               <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
               <TableCell>{log.user_ID}</TableCell>
@@ -143,7 +146,7 @@ const LogsPage: React.FC = () => {
         <Pagination
           count={totalPages}
           page={page}
-          onChange={(_, value) => setPage(value)}
+          onChange={(_: React.ChangeEvent<unknown>, value: number) => setPage(value)}
           color="primary"
         />
       </Box>
