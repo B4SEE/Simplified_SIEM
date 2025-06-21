@@ -24,35 +24,52 @@ def receive_logs():
 @api_bp.route('/logs/search', methods=['GET'])
 def search_logs():
     try:
-        # Get query parameters with defaults
+        # --- AUTHORIZATION CHECK ---
+        auth_header = request.headers.get('Authorization')
+        user_id_header = request.headers.get('X-User-ID')
+        user_role = request.headers.get('X-User-Role', 'user')  # Default to 'user' if not provided
+
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'error': 'Missing or invalid Authorization header'}), 401
+        if not user_id_header:
+            return jsonify({'error': 'Missing X-User-ID header'}), 401
+
+        # Only allow admins to see all logs; regular users can only see their own
+        is_admin = user_role.lower() == 'admin'
+        current_user_id = int(user_id_header)
+
+        # --- EXISTING FILTERS ---
         start_date = request.args.get('startDate')
         end_date = request.args.get('endDate')
         event_type = request.args.get('eventType')
-        user_id = request.args.get('userId')
+        query_user_id = request.args.get('userId')
         severity = request.args.get('severity')
         limit = min(int(request.args.get('limit', 100)), 1000)  # Cap at 1000
         offset = int(request.args.get('offset', 0))
 
-        # Build query
-        query = LogEntry.query
+        query_obj = db.session.query(LogEntry)
 
-        # Apply filters
+        # Apply filters based on query parameters
         if start_date:
-            query = query.filter(LogEntry.timestamp >= datetime.fromisoformat(start_date.replace('Z', '+00:00')))
+            query_obj = query_obj.filter(LogEntry.timestamp >= datetime.fromisoformat(start_date.replace('Z', '+00:00')))
         if end_date:
-            query = query.filter(LogEntry.timestamp <= datetime.fromisoformat(end_date.replace('Z', '+00:00')))
+            query_obj = query_obj.filter(LogEntry.timestamp <= datetime.fromisoformat(end_date.replace('Z', '+00:00')))
         if event_type:
-            query = query.filter(LogEntry.event_type == event_type)
-        if user_id:
-            query = query.filter(LogEntry.user_id == int(user_id))
+            query_obj = query_obj.filter(LogEntry.event_type == event_type)
         if severity:
-            query = query.filter(LogEntry.severity == severity)
+            query_obj = query_obj.filter(LogEntry.severity == severity)
 
-        # Get total count
-        total = query.count()
+        # --- USER-BASED FILTERING ---
+        if is_admin:
+            # Admins can filter by userId if provided
+            if query_user_id:
+                query_obj = query_obj.filter(LogEntry.user_id == int(query_user_id))
+        else:
+            # Regular users can only see their own logs, ignore userId param
+            query_obj = query_obj.filter(LogEntry.user_id == current_user_id)
 
-        # Get paginated results
-        logs = query.order_by(desc(LogEntry.timestamp)).offset(offset).limit(limit).all()
+        total = query_obj.count()
+        logs = query_obj.order_by(desc(LogEntry.timestamp)).offset(offset).limit(limit).all()
 
         # Gather user IDs for role fetching
         user_ids = list(set([log.user_id for log in logs if log.user_id is not None]))

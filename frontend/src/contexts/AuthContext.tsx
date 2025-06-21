@@ -6,9 +6,11 @@ type AuthState = {
   isLoggedIn: boolean;
   token: string | null;
   userId: number | null;
+  roles: string[];
   isAdmin: boolean;
   refresh: () => Promise<void>;
   logout: () => void;
+  login: (token: string, userId: number, roles: string[]) => void;
   setAuthToken: (token: string | null) => void;
   setUserId: (id: number | null) => void;
 };
@@ -31,6 +33,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [userId, setUserId] = useState<number | null>(() => {
     const id = localStorage.getItem('user_id');
     return id ? Number(id) : null;
+  });
+  const [roles, setRoles] = useState<string[]>(() => {
+    const storedRoles = localStorage.getItem('roles');
+    return storedRoles ? JSON.parse(storedRoles) : [];
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -86,20 +92,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const login = async (newToken: string, newUserId: number) => {
+  const login = async (newToken: string, newUserId: number, newRoles: string[]) => {
     localStorage.setItem('token', newToken);
-    localStorage.setItem('userId', String(newUserId));
+    localStorage.setItem('user_id', String(newUserId));
+    localStorage.setItem('roles', JSON.stringify(newRoles));
     setToken(newToken);
     setUserId(newUserId);
+    setRoles(newRoles);
     setIsLoggedIn(true);
     await fetchAndSetRoles(newToken, newUserId);
   };
 
   const logout = () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('userId');
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('roles');
     setToken(null);
     setUserId(null);
+    setRoles([]);
     setIsLoggedIn(false);
   };
 
@@ -112,6 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     isLoggedIn,
     token,
     userId,
+    roles,
     isAdmin,
     refresh,
     logout,

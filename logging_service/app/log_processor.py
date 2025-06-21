@@ -12,6 +12,7 @@ from elasticsearch import Elasticsearch
 from flask import current_app
 from app.models import db
 from app.models.log_entry import LogEntry
+from app.alert_generator import process_log_entry, initialize_alert_generator
 
 class LogProcessorSingleton:
     _instance = None
@@ -74,6 +75,14 @@ class LogProcessorSingleton:
                 print("Kafka consumer initialized and subscribed to 'logs' topic", file=sys.stderr)
 
             print("Log Processor Singleton initialized", file=sys.stderr)
+            
+            # Initialize alert generator
+            try:
+                initialize_alert_generator()
+                print("Alert Generator initialized", file=sys.stderr)
+            except Exception as e:
+                print(f"Warning: Failed to initialize Alert Generator: {e}", file=sys.stderr)
+            
             return True
         except Exception as e:
             print(f"Error in _initialize: {e}", file=sys.stderr)
@@ -175,6 +184,13 @@ class LogProcessorSingleton:
                         
                         if self.__store_log(log_data):
                             success = True
+                            
+                            # Process log entry for alert generation
+                            try:
+                                process_log_entry(log_data)
+                            except Exception as e:
+                                print(f"Warning: Failed to process log for alerts: {e}", file=sys.stderr)
+                            
                             # Commit offset for successful message
                             self._consumer.commit({tp: OffsetAndMetadata(message.offset + 1, None)})
                     except Exception as e:

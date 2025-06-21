@@ -126,7 +126,8 @@ def login():
                     'message': 'Login successful',
                     'status': 'success',
                     'token': token,
-                    'user_id': user.id
+                    'user_id': user.id,
+                    'roles': [role.name for role in user.roles]
                 })
             except Exception as e:
                 db.session.rollback()
