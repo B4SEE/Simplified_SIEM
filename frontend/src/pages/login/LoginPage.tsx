@@ -8,7 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { setAuthToken, setUserId } = useAuth();
+  const auth = useAuth();
 
   const [credentials, setCredentials] = useState({
     username: '',
@@ -34,8 +34,7 @@ const LoginPage: React.FC = () => {
       const data = await login(credentials);
       console.log('Login successful:', data);
 
-      setAuthToken(data.token);
-      setUserId(data.user_id);
+      auth.login(data.token, data.user_id, data.roles || []);
 
       navigate('/dashboard');
     } catch (err: any) {
@@ -85,7 +84,7 @@ const LoginPage: React.FC = () => {
           align='center'
           style={{ marginTop: '1rem' }}
         >
-          Don’t have an account? <Link to='/register'>Register</Link>
+          Don't have an account? <Link to='/register'>Register</Link>
         </Typography>
       </LoginBox>
     </Container>

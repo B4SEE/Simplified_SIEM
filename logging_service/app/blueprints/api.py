@@ -47,28 +47,29 @@ def search_logs():
         limit = min(int(request.args.get('limit', 100)), 1000)  # Cap at 1000
         offset = int(request.args.get('offset', 0))
 
-        query = LogEntry.query
+        query_obj = db.session.query(LogEntry)
 
+        # Apply filters based on query parameters
         if start_date:
-            query = query.filter(LogEntry.timestamp >= datetime.fromisoformat(start_date.replace('Z', '+00:00')))
+            query_obj = query_obj.filter(LogEntry.timestamp >= datetime.fromisoformat(start_date.replace('Z', '+00:00')))
         if end_date:
-            query = query.filter(LogEntry.timestamp <= datetime.fromisoformat(end_date.replace('Z', '+00:00')))
+            query_obj = query_obj.filter(LogEntry.timestamp <= datetime.fromisoformat(end_date.replace('Z', '+00:00')))
         if event_type:
-            query = query.filter(LogEntry.event_type == event_type)
+            query_obj = query_obj.filter(LogEntry.event_type == event_type)
         if severity:
-            query = query.filter(LogEntry.severity == severity)
+            query_obj = query_obj.filter(LogEntry.severity == severity)
 
         # --- USER-BASED FILTERING ---
         if is_admin:
             # Admins can filter by userId if provided
             if query_user_id:
-                query = query.filter(LogEntry.user_id == int(query_user_id))
+                query_obj = query_obj.filter(LogEntry.user_id == int(query_user_id))
         else:
             # Regular users can only see their own logs, ignore userId param
-            query = query.filter(LogEntry.user_id == current_user_id)
+            query_obj = query_obj.filter(LogEntry.user_id == current_user_id)
 
-        total = query.count()
-        logs = query.order_by(desc(LogEntry.timestamp)).offset(offset).limit(limit).all()
+        total = query_obj.count()
+        logs = query_obj.order_by(desc(LogEntry.timestamp)).offset(offset).limit(limit).all()
 
         logs_data = [{
             'id': log.id,

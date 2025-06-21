@@ -15,7 +15,7 @@ import type { LogStats, LogsGraphData } from '../../services/logsService';
 import { useAuth } from '../../contexts/AuthContext';
 
 const DashboardPage: React.FC = () => {
-  const { token, userId } = useAuth();
+  const { token, userId, roles } = useAuth();
   const [stats, setStats] = useState<LogStats | null>(null);
   const [graphData, setGraphData] = useState<LogsGraphData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,9 +25,11 @@ const DashboardPage: React.FC = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        const userRole = roles.includes('admin') ? 'admin' : 'user';
+
         const [statsData, graphData] = await Promise.all([
-          fetchLogStats(token || undefined, userId || undefined, 'user'),
-          getLogsGraphData(token || undefined, userId || undefined, 'user', 7)
+          fetchLogStats(token || undefined, userId || undefined, userRole),
+          getLogsGraphData(token || undefined, userId || undefined, userRole, 7)
         ]);
         setStats(statsData);
         setGraphData(graphData);
@@ -43,7 +45,7 @@ const DashboardPage: React.FC = () => {
     fetchData();
     const interval = setInterval(fetchData, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
-  }, [token, userId]);
+  }, [token, userId, roles]);
 
   if (loading && !stats) {
     return (

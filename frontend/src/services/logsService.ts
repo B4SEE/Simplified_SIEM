@@ -124,12 +124,27 @@ export const getLogsGraphData = async (
   }
 };
 
-export const getRecentLogs = async (limit: number = 10, token?: string, userId?: number, userRole: string = 'user'): Promise<LogEntry[]> => {
+export const getLogs = async (
+  token?: string,
+  userId?: number,
+  userRole: string = 'user',
+  limit: number = 10,
+  offset: number = 0,
+  eventType?: string,
+  severity?: string
+): Promise<LogSearchResponse> => {
   try {
-    const response = await searchLogs({ limit }, token, userId, userRole);
-    return response.logs || [];
+    const query: any = { limit, offset };
+    if (eventType && eventType !== 'all') {
+      query.eventType = eventType;
+    }
+    if (severity) {
+      query.severity = severity;
+    }
+    const response = await searchLogs(query, token, userId, userRole);
+    return response || { logs: [], total: 0, offset: 0, limit: 0 };
   } catch (error) {
-    console.error('Failed to get recent logs:', error);
+    console.error('Failed to get logs:', error);
     throw error;
   }
 }; 
