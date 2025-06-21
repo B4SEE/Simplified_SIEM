@@ -33,13 +33,24 @@ export interface LogSearchResponse {
   limit: number;
 }
 
-export const fetchLogStats = async (startDate?: string, endDate?: string): Promise<LogStats> => {
+export const fetchLogStats = async (
+  token?: string,
+  userId?: number,
+  userRole: string = 'user',
+  startDate?: string,
+  endDate?: string
+): Promise<LogStats> => {
   try {
-    const response = await searchLogs({
-      startDate,
-      endDate,
-      limit: 1000
-    });
+    const response = await searchLogs(
+      {
+        startDate,
+        endDate,
+        limit: 1000,
+      },
+      token,
+      userId,
+      userRole
+    );
 
     const logs: LogEntry[] = response.logs || [];
     const successfulLogins = logs.filter((log: LogEntry) => log.event_type === 'login_success').length;
@@ -62,17 +73,27 @@ export const fetchLogStats = async (startDate?: string, endDate?: string): Promi
   }
 };
 
-export const getLogsGraphData = async (days: number = 7): Promise<LogsGraphData[]> => {
+export const getLogsGraphData = async (
+  token?: string,
+  userId?: number,
+  userRole: string = 'user',
+  days: number = 7
+): Promise<LogsGraphData[]> => {
   try {
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    const response = await searchLogs({
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      limit: 1000
-    });
+    const response = await searchLogs(
+      {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        limit: 1000,
+      },
+      token,
+      userId,
+      userRole
+    );
 
     const logs = response.logs || [];
     const graphData: LogsGraphData[] = [];
@@ -103,12 +124,27 @@ export const getLogsGraphData = async (days: number = 7): Promise<LogsGraphData[
   }
 };
 
-export const getRecentLogs = async (limit: number = 10): Promise<LogEntry[]> => {
+export const getLogs = async (
+  token?: string,
+  userId?: number,
+  userRole: string = 'user',
+  limit: number = 10,
+  offset: number = 0,
+  eventType?: string,
+  severity?: string
+): Promise<LogSearchResponse> => {
   try {
-    const response = await searchLogs({ limit });
-    return response.logs || [];
+    const query: any = { limit, offset };
+    if (eventType && eventType !== 'all') {
+      query.eventType = eventType;
+    }
+    if (severity) {
+      query.severity = severity;
+    }
+    const response = await searchLogs(query, token, userId, userRole);
+    return response || { logs: [], total: 0, offset: 0, limit: 0 };
   } catch (error) {
-    console.error('Failed to get recent logs:', error);
+    console.error('Failed to get logs:', error);
     throw error;
   }
 }; 
