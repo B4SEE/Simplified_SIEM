@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { checkAuthStatus } from '../api/auth';
+import { checkAuthStatus, getProfile } from '../api/auth';
 
 type AuthState = {
   isLoading: boolean;
@@ -7,6 +7,7 @@ type AuthState = {
   token: string | null;
   userId: number | null;
   roles: string[];
+  isAdmin: boolean;
   refresh: () => Promise<void>;
   logout: () => void;
   login: (token: string, userId: number, roles: string[]) => void;
@@ -15,6 +16,13 @@ type AuthState = {
 };
 
 const AuthContext = createContext<AuthState | null>(null);
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
+  return context;
+};
+
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -32,6 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const setAuthToken = (newToken: string | null) => {
     setToken(newToken);
@@ -39,6 +48,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       localStorage.setItem('token', newToken);
     } else {
       localStorage.removeItem('token');
+    }
+  };
+
+  const fetchAndSetRoles = async (tokenVal: string | null, userIdVal: number | null) => {
+    if (!tokenVal || !userIdVal) {
+      setIsAdmin(false);
+      return;
+    }
+    try {
+      const response = await getProfile(tokenVal, userIdVal);
+      const roles = response.data?.profile?.roles || [];
+      setIsAdmin(Array.isArray(roles) && roles.includes('admin'));
+    } catch {
+      setIsAdmin(false);
     }
   };
 
@@ -54,19 +77,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const refresh = async () => {
     if (!token) {
       setIsLoggedIn(false);
+      setIsAdmin(false);
       return;
     }
     try {
       await checkAuthStatus();
       setIsLoggedIn(true);
+      await fetchAndSetRoles(token, userId);
     } catch {
       localStorage.removeItem('token');
       setToken(null);
       setIsLoggedIn(false);
+      setIsAdmin(false);
     }
   };
 
-  const login = (newToken: string, newUserId: number, newRoles: string[]) => {
+  const login = async (newToken: string, newUserId: number, newRoles: string[]) => {
     localStorage.setItem('token', newToken);
     localStorage.setItem('user_id', String(newUserId));
     localStorage.setItem('roles', JSON.stringify(newRoles));
@@ -74,6 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setUserId(newUserId);
     setRoles(newRoles);
     setIsLoggedIn(true);
+    await fetchAndSetRoles(newToken, newUserId);
   };
 
   const logout = () => {
@@ -88,7 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     refresh().finally(() => setIsLoading(false));
-  }, [token]);
+  }, [token, userId]);
 
   const value = {
     isLoading,
@@ -96,6 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     token,
     userId,
     roles,
+    isAdmin,
     refresh,
     logout,
     login,
@@ -103,11 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setUserId: setUserIdWrapper,
   };
 
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>');
-  return ctx;
-};

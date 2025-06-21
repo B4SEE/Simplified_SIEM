@@ -8,6 +8,8 @@ import LogsPage from '../pages/logs/LogsPage';
 import RegistrationPage from '../pages/registration/RegistrationPage';
 import UserPage from '../pages/user/UserPage';
 import PrivateRoute from './PrivateRoute';
+import AdminRoute from './AdminRoute';
+import AdvancedLogsPage from '../pages/admin/AdvancedLogsPage';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -53,6 +55,17 @@ const AppRoutes: React.FC = () => {
               <UserPage />
             </DashboardLayout>
           </PrivateRoute>
+        }
+      />
+
+      <Route
+        path='/admin/advanced-logs'
+        element={
+          <AdminRoute>
+            <DashboardLayout>
+              <AdvancedLogsPage />
+            </DashboardLayout>
+          </AdminRoute>
         }
       />
 

@@ -263,7 +263,8 @@ def get_profile():
             'email': user.email,
             'first_name': user.first_name,
             'last_name': user.last_name,
-            'last_login_at': user.last_login_at.isoformat() if user.last_login_at else None
+            'last_login_at': user.last_login_at.isoformat() if user.last_login_at else None,
+            'roles': [role.name for role in user.roles] if hasattr(user, 'roles') else []
         }
     })
 

@@ -6,17 +6,13 @@ def create_app(config_name='default'):
     app = Flask(__name__)
     
     # Configure CORS
-    CORS(app, 
-         resources={
-             r"/*": {
-                 "origins": ["http://localhost:3000"],
-                 "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-                 "allow_headers": ["Content-Type", "Authorization", "X-User-Id"],
-                 "expose_headers": ["Content-Type", "Authorization"],
-                 "supports_credentials": True,
-                 "max_age": 3600
-             }
-         })
+    CORS(app,
+         origins=["http://localhost:3000"],
+         supports_credentials=True,
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         allow_headers=["Content-Type", "Authorization", "X-User-Id"],
+         expose_headers=["Content-Type", "Authorization"],
+         max_age=3600)
 
     @app.after_request
     def after_request(response):
@@ -55,8 +51,10 @@ def create_app(config_name='default'):
     # Register blueprints
     from .blueprints.auth import auth_bp
     from .blueprints.alarms import alarms_bp
+    from .blueprints.logs import logs_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(alarms_bp)
+    app.register_blueprint(logs_bp)
 
     # Ensure all models are imported
     from .models.user import User

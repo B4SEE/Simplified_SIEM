@@ -1,4 +1,5 @@
 import { searchLogs } from '../api/logging';
+export { searchLogs };
 
 export interface LogEntry {
   id: number;
@@ -10,6 +11,7 @@ export interface LogEntry {
   geo?: [number, number];
   user_agent?: string;
   additional_data?: Record<string, any>;
+  roles?: string[]; // Added for user roles display
 }
 
 export interface LogStats {
