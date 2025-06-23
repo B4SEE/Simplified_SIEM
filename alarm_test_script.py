@@ -31,7 +31,7 @@ print('>>> Simplified alarm test script is running')
 LOGGING_SERVICE_URL = "http://localhost:5000/api/logs"
 AUTH_SERVICE_URL = "http://localhost:5001/api/alarms"
 TEST_USER_ID = 1
-TEST_TOKEN = "d619266d-f149-427d-a158-eb29d120ac76"
+TEST_TOKEN = "test_token"
 
 # Test data
 USER_AGENTS = [

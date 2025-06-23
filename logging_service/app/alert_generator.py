@@ -31,12 +31,10 @@ class AlertGenerator:
     
     def __init__(self, 
                  auth_service_url: str = "http://auth_service:5000/api/alarms",
-                 test_user_id: int = 1,
-                 test_token: str = "d619266d-f149-427d-a158-eb29d120ac76"):
+                 service_token: str = "d619266d-f149-427d-a158-eb29d120ac76"):  # Use as service token
         
         self.auth_service_url = auth_service_url
-        self.test_user_id = test_user_id
-        self.test_token = test_token
+        self.service_token = service_token  # Token for service account to create alerts for any user
         
         # Simple tracking for test scenarios
         self.ip_failed_logins = defaultdict(int)  # IP -> failed login count
@@ -66,7 +64,7 @@ class AlertGenerator:
         # Track created alarms to avoid duplicates
         self.created_alarms = set()
         
-        logger.info("Simplified Alert Generator initialized")
+        logger.info("Simplified Alert Generator initialized with service token")
     
     def add_event(self, log_entry: Dict[str, Any]) -> None:
         """
@@ -142,7 +140,7 @@ class AlertGenerator:
         event_type = log_entry.get('event_type')
         geo = log_entry.get('geo')
         
-        # 1. Bruteforce detection
+        # 1. Bruteforce detection - create alert for the user being attacked
         if self.ip_failed_logins[ip_address] >= self.thresholds['bruteforce']:
             alarm_key = f"bruteforce_{ip_address}"
             if alarm_key not in self.created_alarms:
@@ -150,10 +148,10 @@ class AlertGenerator:
                     'ip_address': ip_address,
                     'failed_count': self.ip_failed_logins[ip_address],
                     'description': f'Bruteforce attack detected from {ip_address}'
-                })
+                }, target_user_id=user_id or 1)  # Use affected user or default to 1
                 self.created_alarms.add(alarm_key)
         
-        # 2. Distributed access detection
+        # 2. Distributed access detection - create alert for the specific user
         if user_id and len(self.user_ip_mapping[user_id]) >= self.thresholds['distributed']:
             alarm_key = f"distributed_{user_id}"
             if alarm_key not in self.created_alarms:
@@ -162,10 +160,10 @@ class AlertGenerator:
                     'ip_count': len(self.user_ip_mapping[user_id]),
                     'ips': list(self.user_ip_mapping[user_id]),
                     'description': f'User {user_id} accessing from {len(self.user_ip_mapping[user_id])} different IPs'
-                })
+                }, target_user_id=user_id)
                 self.created_alarms.add(alarm_key)
         
-        # 3. High-frequency events
+        # 3. High-frequency events - create alert for the user experiencing the events
         if self.ip_event_count[ip_address] >= self.thresholds['high_frequency']:
             alarm_key = f"high_freq_{ip_address}"
             if alarm_key not in self.created_alarms:
@@ -173,10 +171,10 @@ class AlertGenerator:
                     'ip_address': ip_address,
                     'event_count': self.ip_event_count[ip_address],
                     'description': f'High frequency events from {ip_address}'
-                })
+                }, target_user_id=user_id or 1)  # Use affected user or default to 1
                 self.created_alarms.add(alarm_key)
         
-        # 4. Unusual login location (if we have geo data)
+        # 4. Unusual login location - create alert for the specific user
         if event_type == 'login_success' and user_id and geo and user_id in self.user_locations:
             last_geo = self.user_locations[user_id]
             if last_geo != geo:  # Different location
@@ -189,7 +187,7 @@ class AlertGenerator:
                             'ip_address': ip_address,
                             'distance_km': distance,
                             'description': f'Unusual login location for user {user_id} from {ip_address}'
-                        })
+                        }, target_user_id=user_id)
                         self.created_alarms.add(alarm_key)
     
     def _calculate_distance(self, geo1: tuple, geo2: tuple) -> float:
@@ -200,8 +198,8 @@ class AlertGenerator:
         except:
             return 0
     
-    def _create_alarm(self, alarm_type: str, details: Dict[str, Any]) -> None:
-        """Create an alarm via the auth service API."""
+    def _create_alarm(self, alarm_type: str, details: Dict[str, Any], target_user_id: int) -> None:
+        """Create an alarm via the auth service API for the specified user."""
         try:
             # Map alarm types to event types that the auth service expects
             event_type_mapping = {
@@ -224,8 +222,8 @@ class AlertGenerator:
             
             headers = {
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.test_token}",
-                "X-User-Id": str(self.test_user_id)
+                "Authorization": f"Bearer {self.service_token}",
+                "X-User-Id": str(target_user_id)  # Create alarm for the specific affected user
             }
             
             response = requests.post(
@@ -236,12 +234,12 @@ class AlertGenerator:
             )
             
             if response.status_code == 201:
-                logger.info(f"Created {alarm_type} alarm: {details}")
+                logger.info(f"Created {alarm_type} alarm for user {target_user_id}: {details}")
             else:
-                logger.warning(f"Failed to create {alarm_type} alarm: {response.status_code} - {response.text}")
+                logger.warning(f"Failed to create {alarm_type} alarm for user {target_user_id}: {response.status_code} - {response.text}")
                 
         except Exception as e:
-            logger.error(f"Error creating {alarm_type} alarm: {e}")
+            logger.error(f"Error creating {alarm_type} alarm for user {target_user_id}: {e}")
     
     def get_statistics(self) -> Dict[str, Any]:
         """Get current statistics for monitoring."""
@@ -257,14 +255,13 @@ class AlertGenerator:
 # Global instance
 _alert_generator = None
 
-def initialize_alert_generator(auth_service_url: str = None, test_user_id: int = None, test_token: str = None) -> AlertGenerator:
+def initialize_alert_generator(auth_service_url: str = None, service_token: str = None) -> AlertGenerator:
     """Initialize the global alert generator instance."""
     global _alert_generator
     if _alert_generator is None:
         _alert_generator = AlertGenerator(
             auth_service_url=auth_service_url or "http://auth_service:5000/api/alarms",
-            test_user_id=test_user_id or 1,
-            test_token=test_token or "d619266d-f149-427d-a158-eb29d120ac76"
+            service_token=service_token or "d619266d-f149-427d-a158-eb29d120ac76"
         )
     return _alert_generator
 
