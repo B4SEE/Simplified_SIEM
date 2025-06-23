@@ -49,7 +49,7 @@ const LogsPage: React.FC = () => {
 
       const response = await getLogs(
         token,
-        userId,
+        userId ?? undefined,
         userRole,
         LOGS_PER_PAGE,
         offset,
@@ -65,7 +65,7 @@ const LogsPage: React.FC = () => {
       if (uniqueEventTypes.length === 0) {
         const allLogsResponse = await getLogs(
           token,
-          userId,
+          userId ?? undefined,
           userRole,
           1000,
           0

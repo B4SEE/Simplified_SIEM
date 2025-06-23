@@ -1,4 +1,5 @@
 import { searchLogs } from '../api/logging';
+import { getAlarms } from '../api/alarms';
 export { searchLogs };
 
 export interface LogEntry {
@@ -57,17 +58,46 @@ export const fetchLogStats = async (
     const logs: LogEntry[] = response.logs || [];
     const successfulLogins = logs.filter((log: LogEntry) => log.event_type === 'login_success').length;
     const failedLogins = logs.filter((log: LogEntry) => log.event_type === 'login_failed').length;
-    const alertsCount = logs.filter((log: LogEntry) => log.severity === 'high').length;
+    
+    // Get actual alarms count from alarms API
+    let alertsCount = 0;
+    if (token && userId) {
+      try {
+        const alarmsResponse = await getAlarms(token, userId);
+        if (alarmsResponse.data.status === 'success') {
+          // Count active (unresolved) alarms
+          alertsCount = alarmsResponse.data.alarms.filter((alarm: any) => alarm.is_active).length;
+        }
+      } catch (alarmsError) {
+        console.warn('Failed to fetch alarms for count:', alarmsError);
+        // Fallback to counting high severity logs if alarms API fails
+        alertsCount = logs.filter((log: LogEntry) => log.severity === 'high').length;
+      }
+    }
+    
     const lastLogin = logs
       .filter((log: LogEntry) => log.event_type === 'login_success')
       .sort((a: LogEntry, b: LogEntry) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0]?.timestamp;
+
+    // Format the last login timestamp to be user-friendly
+    const formattedLastLogin = lastLogin 
+      ? new Date(lastLogin).toLocaleString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true
+        })
+      : 'No recent logins';
 
     return {
       totalLogs: logs.length,
       successfulLogins,
       failedLogins,
       alertsCount,
-      lastLogin: lastLogin || 'No recent logins'
+      lastLogin: formattedLastLogin
     };
   } catch (error) {
     console.error('Failed to get log stats:', error);
@@ -84,7 +114,9 @@ export const getLogsGraphData = async (
   try {
     const endDate = new Date();
     const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
+    startDate.setDate(startDate.getDate() - (days - 1)); // Include today in the range
+
+    console.log('Graph data date range:', { startDate: startDate.toISOString(), endDate: endDate.toISOString() });
 
     const response = await searchLogs(
       {
@@ -98,19 +130,35 @@ export const getLogsGraphData = async (
     );
 
     const logs = response.logs || [];
+    console.log('Total logs fetched for graph:', logs.length);
+    console.log('Sample log timestamps:', logs.slice(0, 3).map((log: LogEntry) => ({ timestamp: log.timestamp, event_type: log.event_type })));
+    
     const graphData: LogsGraphData[] = [];
 
     for (let i = 0; i < days; i++) {
       const date = new Date(startDate);
       date.setDate(date.getDate() + i);
+      
+      // Set date range for the day (start of day to end of day) in UTC to match server timestamps
+      const dayStart = new Date(date);
+      dayStart.setUTCHours(0, 0, 0, 0);
+      const dayEnd = new Date(date);
+      dayEnd.setUTCHours(23, 59, 59, 999);
+      
       const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
       const dayLogs = logs.filter((log: LogEntry) => {
+        // Parse log timestamp and handle timezone
         const logDate = new Date(log.timestamp);
-        return logDate.getDate() === date.getDate() &&
-               logDate.getMonth() === date.getMonth() &&
-               logDate.getFullYear() === date.getFullYear();
+        // If timestamp doesn't have timezone info, treat as UTC
+        const logDateUTC = log.timestamp.includes('Z') || log.timestamp.includes('+') || log.timestamp.includes('-') 
+          ? logDate 
+          : new Date(log.timestamp + 'Z');
+        
+        return logDateUTC >= dayStart && logDateUTC <= dayEnd;
       });
+
+      console.log(`Day ${dateStr}: ${dayLogs.length} logs (${dayLogs.filter((log: LogEntry) => log.event_type === 'login_failed').length} failed)`);
 
       graphData.push({
         date: dateStr,
@@ -119,6 +167,7 @@ export const getLogsGraphData = async (
       });
     }
 
+    console.log('Graph data generated:', graphData);
     return graphData;
   } catch (error) {
     console.error('Failed to get logs graph data:', error);

@@ -31,8 +31,8 @@ class AlertGenerator:
     
     def __init__(self, 
                  auth_service_url: str = "http://auth_service:5000/api/alarms",
-                 test_user_id: int = 3,
-                 test_token: str = "9b2149b1-1e29-481e-8be1-ab33b6270042"):
+                 test_user_id: int = 1,
+                 test_token: str = "d619266d-f149-427d-a158-eb29d120ac76"):
         
         self.auth_service_url = auth_service_url
         self.test_user_id = test_user_id
@@ -203,17 +203,29 @@ class AlertGenerator:
     def _create_alarm(self, alarm_type: str, details: Dict[str, Any]) -> None:
         """Create an alarm via the auth service API."""
         try:
+            # Map alarm types to event types that the auth service expects
+            event_type_mapping = {
+                'bruteforce': 'login_failed',
+                'distributed': 'login_success', 
+                'high_frequency': 'high_frequency_events',
+                'unusual_location': 'login_success'
+            }
+            
             alarm_data = {
                 "name": f"{alarm_type.title()} Alert",
                 "description": details.get('description', f'{alarm_type} detected'),
+                "event_type": event_type_mapping.get(alarm_type, alarm_type),
+                "threshold": details.get('failed_count') or details.get('event_count') or details.get('ip_count') or 1,
+                "time_window": self.time_windows.get(alarm_type, 60),
+                "is_active": True,
                 "severity": "high" if alarm_type in ['bruteforce', 'unusual_location'] else "medium",
-                "user_ID": self.test_user_id,
-                "details": details
+                "criteria": details
             }
             
             headers = {
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.test_token}"
+                "Authorization": f"Bearer {self.test_token}",
+                "X-User-Id": str(self.test_user_id)
             }
             
             response = requests.post(
@@ -226,7 +238,7 @@ class AlertGenerator:
             if response.status_code == 201:
                 logger.info(f"Created {alarm_type} alarm: {details}")
             else:
-                logger.warning(f"Failed to create {alarm_type} alarm: {response.status_code}")
+                logger.warning(f"Failed to create {alarm_type} alarm: {response.status_code} - {response.text}")
                 
         except Exception as e:
             logger.error(f"Error creating {alarm_type} alarm: {e}")
@@ -251,8 +263,8 @@ def initialize_alert_generator(auth_service_url: str = None, test_user_id: int =
     if _alert_generator is None:
         _alert_generator = AlertGenerator(
             auth_service_url=auth_service_url or "http://auth_service:5000/api/alarms",
-            test_user_id=test_user_id or 3,
-            test_token=test_token or "9b2149b1-1e29-481e-8be1-ab33b6270042"
+            test_user_id=test_user_id or 1,
+            test_token=test_token or "d619266d-f149-427d-a158-eb29d120ac76"
         )
     return _alert_generator
 

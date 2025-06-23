@@ -30,8 +30,8 @@ print('>>> Simplified alarm test script is running')
 # Configuration
 LOGGING_SERVICE_URL = "http://localhost:5000/api/logs"
 AUTH_SERVICE_URL = "http://localhost:5001/api/alarms"
-TEST_USER_ID = 3
-TEST_TOKEN = "9b2149b1-1e29-481e-8be1-ab33b6270042"
+TEST_USER_ID = 1
+TEST_TOKEN = "d619266d-f149-427d-a158-eb29d120ac76"
 
 # Test data
 USER_AGENTS = [
