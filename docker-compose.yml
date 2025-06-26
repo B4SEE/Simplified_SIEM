@@ -1,21 +1,4 @@
 services:
-  # Database service
-  postgres:
-    image: postgres:13
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: siem_user
-      POSTGRES_PASSWORD: secure_password
-      POSTGRES_DB: siem_db
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U siem_user -d siem_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
   # Redis for Celery tasks
   redis:
     image: redis:6
@@ -56,19 +39,17 @@ services:
     ports:
       - "5001:5000"  # Map to a different host port to avoid conflict
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_started
       kafka:
         condition: service_started
     environment:
-      DATABASE_URI: postgresql://siem_user:secure_password@postgres:5432/siem_db
-      REDIS_URL: redis://redis:6379/0
-      KAFKA_BROKER: kafka:9092
-      SECRET_KEY: dev-key-change-in-production
+      DATABASE_URI: ${DATABASE_URI}
+      REDIS_URL: ${REDIS_URL}
+      KAFKA_BROKER: ${KAFKA_BROKER}
+      SECRET_KEY: ${SECRET_KEY}
       FLASK_APP: run.py
-      FLASK_ENV: development
+      FLASK_ENV: ${FLASK_ENV}
 
   logging_service:
     build:
@@ -88,13 +69,11 @@ services:
         condition: service_started
       elasticsearch:
         condition: service_healthy
-      postgres:
-        condition: service_healthy
     environment:
-      KAFKA_BROKER: "kafka:9092"
+      KAFKA_BROKER: ${KAFKA_BROKER}
       FLASK_DEBUG: 1
       FLASK_APP: ./run.py
-      DATABASE_URL: postgresql://siem_user:secure_password@postgres:5432/siem_db
+      DATABASE_URL: ${DATABASE_URI}
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:9.0.0
@@ -117,20 +96,8 @@ services:
     depends_on:
       elasticsearch:
         condition: service_started
-      postgres:
-        condition: service_healthy
-      kafka:
-        condition: service_started
-      auth_service:
-        condition: service_started
     environment:
-      DATABASE_URL: postgresql://siem_user:secure_password@postgres:5432/siem_db
-      KAFKA_BROKER: kafka:9092
-      SECRET_KEY: dev-key-change-in-production
-      FLASK_APP: run.py
-      FLASK_ENV: development
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
       
 volumes:
   postgres_data:
-
-# celery -A app.celery.celery_app worker --beat --loglevel=info

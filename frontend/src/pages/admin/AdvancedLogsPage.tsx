@@ -23,9 +23,10 @@ import type { LogEntry } from '../../services/logsService';
 import { useAuth } from '../../contexts/AuthContext';
 
 const severities = ['low', 'medium', 'high'];
+const LOGS_PER_PAGE = 10;
 
 const AdvancedLogsPage: React.FC = () => {
-  const { userId, isAdmin } = useAuth();
+  const { userId, isAdmin, token } = useAuth();
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +34,7 @@ const AdvancedLogsPage: React.FC = () => {
     startDate: '',
     endDate: '',
     severity: '',
-    userId: '',
+    filterUserId: '',
     eventType: '',
   });
   const [page, setPage] = useState(1);
@@ -42,18 +43,24 @@ const AdvancedLogsPage: React.FC = () => {
   // Fetch logs when page or filters change
   React.useEffect(() => {
     const fetchLogs = async () => {
+      if (!token || userId === null) {
+	  setError('Authentication required.');
+	  setLoading(false);
+	  return;
+      }
+      
       setLoading(true);
       setError(null);
       try {
         const params = {
           ...filters,
-          userId: filters.userId ? Number(filters.userId) : undefined,
-          limit: 20,
-          offset: (page - 1) * 20,
+          userId: filters.filterUserId ? Number(filters.filterUserId) : undefined,
+          limit: LOGS_PER_PAGE,
+          offset: (page - 1) * LOGS_PER_PAGE,
         };
-        const response = await searchLogs(params);
+        const response = await searchLogs(params, token!, userId, isAdmin ? 'admin' : 'user');
         setLogs(response.logs);
-        setTotalPages(Math.ceil(response.total / 20));
+        setTotalPages(Math.ceil(response.total / LOGS_PER_PAGE));
       } catch (err) {
         setError('Failed to fetch logs.');
       } finally {
@@ -62,7 +69,7 @@ const AdvancedLogsPage: React.FC = () => {
     };
     fetchLogs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, filters]);
+  }, [page, filters, token, userId, isAdmin]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -74,23 +81,32 @@ const AdvancedLogsPage: React.FC = () => {
   };
 
   const handleSearch = async () => {
+    if (!token || userId === null) {
+	setError('Authentication required.');
+	return;
+    }
+
     setLoading(true);
     setError(null);
     try {
       const params = {
         ...filters,
-        userId: filters.userId ? Number(filters.userId) : undefined,
-        limit: 20,
-        offset: (page - 1) * 20,
+        userId: filters.filterUserId ? Number(filters.filterUserId) : undefined,
+        limit: LOGS_PER_PAGE,
+        offset: (page - 1) * LOGS_PER_PAGE,
       };
-      const response = await searchLogs(params);
+      const response = await searchLogs(params, token!, userId, isAdmin ? 'admin' : 'user');
       setLogs(response.logs);
-      setTotalPages(Math.ceil(response.total / 20));
+      setTotalPages(Math.ceil(response.total / LOGS_PER_PAGE));
     } catch (err) {
       setError('Failed to fetch logs.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+    setPage(value);
   };
 
   return (
@@ -134,8 +150,8 @@ const AdvancedLogsPage: React.FC = () => {
         </FormControl>
         <TextField
           label="User ID"
-          name="userId"
-          value={filters.userId}
+          name="filterUserId"
+          value={filters.filterUserId}
           onChange={handleChange}
         />
         <TextField
@@ -153,25 +169,26 @@ const AdvancedLogsPage: React.FC = () => {
       ) : error ? (
         <Typography color="error">{error}</Typography>
       ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Timestamp</TableCell>
-                <TableCell>User ID</TableCell>
-                <TableCell>Event Type</TableCell>
-                <TableCell>Severity</TableCell>
-                <TableCell>IP Address</TableCell>
-                <TableCell>User Roles</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {logs.map(log => (
-                <TableRow key={log.id}>
-                  <TableCell>{log.timestamp}</TableCell>
-                  <TableCell>
-                    {log.user_ID === null || log.user_ID === undefined ? '-' : log.user_ID}
-                    {userId !== null && log.user_ID === userId && (
+        <>
+          <TableContainer component={Paper} elevation={3}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Timestamp</TableCell>
+                  <TableCell>User ID</TableCell>
+                  <TableCell>Event Type</TableCell>
+                  <TableCell>Severity</TableCell>
+                  <TableCell>IP Address</TableCell>
+                  <TableCell>User Roles</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {logs.map(log => (
+                  <TableRow key={log.id}>
+                    <TableCell>{log.timestamp}</TableCell>
+                    <TableCell>
+                      {log.user_ID === null || log.user_ID === undefined ? '-' : log.user_ID}
+                      {userId !== null && log.user_ID === userId && (
   <span style={{
     display: 'inline-block',
     background: '#e3f2fd',
@@ -186,24 +203,25 @@ const AdvancedLogsPage: React.FC = () => {
     that's you!
   </span>
 )}
-                  </TableCell>
-                  <TableCell>{log.event_type}</TableCell>
-                  <TableCell>{log.severity}</TableCell>
-                  <TableCell>{log.ip_address}</TableCell>
-                  <TableCell>{Array.isArray(log.roles) && log.roles.length > 0 ? log.roles.join(', ') : '-'}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    </TableCell>
+                    <TableCell>{log.event_type}</TableCell>
+                    <TableCell>{log.severity}</TableCell>
+                    <TableCell>{log.ip_address}</TableCell>
+                    <TableCell>{Array.isArray(log.roles) && log.roles.length > 0 ? log.roles.join(', ') : '-'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
           <Box display="flex" justifyContent="center" mt={2}>
             <Pagination
               count={totalPages}
               page={page}
-              onChange={(_, value) => setPage(value)}
+              onChange={handlePageChange}
               color="primary"
             />
           </Box>
-        </TableContainer>
+        </>
       )}
     </Box>
   );
