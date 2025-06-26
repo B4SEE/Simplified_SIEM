@@ -1,2 +1,14 @@
-python-dateutil>=2.8.2
-geopy>=2.2.0
+Flask==2.0.1
+Flask-SQLAlchemy==2.5.1
+Flask-CORS==4.0.0
+flask-cors>=3.0.10
+SQLAlchemy==1.4.23
+kafka-python==2.0.2
+elasticsearch==7.17.0
+python-dotenv==0.19.0
+psycopg2-binary==2.9.1
+requests==2.26.0
+celery==5.1.2
+redis==3.5.3
+Werkzeug==2.0.3
+geopy==2.3.0
